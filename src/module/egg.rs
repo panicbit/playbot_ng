@@ -6,7 +6,7 @@ use std::iter::once;
 lazy_static! {
     static ref SCRIPT: Vec<(Regex, fn(&str) -> String)> = vec![
         (
-            re(r"Open the [[:word:]]+ bay doors? ,? (?P<nick>[[:word:]]+) [.!]?"),
+            re(r"Open the [[:word:]]( [[:word:]]+)* bay doors? ,? (?P<nick>[[:word:]]+) [.!]?"),
             |name| format!("I'm sorry {}, I'm afraid I can't do that.", name),
         ),
         (

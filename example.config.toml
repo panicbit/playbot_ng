@@ -1,9 +1,10 @@
+[[instance]]
+server = "irc.mozilla.org"
 nickname = "nick"
 # nick_password = "pass"
 channels = [
     "#my_channel"
 ]
-server = "irc.mozilla.org"
 port = 6697
 use_ssl = true
 should_ghost = true

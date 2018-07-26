@@ -16,11 +16,12 @@ pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
 #[derive(Serialize,Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Request<'a> {
-    code: Cow<'a, str>,
     channel: Channel,
-    crate_type: CrateType,
     mode: Mode,
+    crate_type: CrateType,
     tests: bool,
+    backtrace: bool,
+    code: Cow<'a, str>,
 }
 
 impl<'a> Request<'a> {
@@ -30,6 +31,7 @@ impl<'a> Request<'a> {
             channel: Channel::Stable,
             crate_type: CrateType::Bin,
             mode: Mode::Debug,
+            backtrace: false,
             tests: false,
         }
     }
@@ -42,6 +44,10 @@ impl<'a> Request<'a> {
         self.channel
     }
 
+    pub fn backtrace(&self) -> bool {
+        self.backtrace
+    }
+
     pub fn set_channel(&mut self, channel: Channel) {
         self.channel = channel;
     }
@@ -52,6 +58,10 @@ impl<'a> Request<'a> {
 
     pub fn set_mode(&mut self, mode: Mode) {
         self.mode = mode;
+    }
+
+    pub fn set_backtrace(&mut self, state: bool) {
+        self.backtrace = state;
     }
 }
 

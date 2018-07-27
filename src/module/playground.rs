@@ -56,8 +56,6 @@ fn playground_handler() -> impl Fn(&Context) -> Flow {
             return Flow::Break;
         }
 
-
-
         let code = if bare { body.to_string() } else {
             let crate_attrs = CRATE_ATTRS.find(body)
                 .map(|attr| attr.as_str())
@@ -105,11 +103,21 @@ pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
     };
 
     let output = if resp.success { &resp.stdout } else { &resp.stderr };
-
-    let skip_count = if resp.success { 0 } else { 1 };
     let take_count = if resp.success { 2 } else { 1 };
+    let lines = output
+        .lines()
+        .filter(|line| {
+            if resp.success {
+                return true;
+            }
 
-    for line in output.lines().skip(skip_count).take(take_count) {
+               !line.trim().starts_with("Compiling")
+            && !line.trim().starts_with("Finished")
+            && !line.trim().starts_with("Running")
+        })
+        .take(take_count);
+
+    for line in lines {
         ctx.reply(line);
     }
 

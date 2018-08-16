@@ -1,4 +1,4 @@
-use module::prelude::*;
+use crate::module::prelude::*;
 use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 use itertools::Itertools;

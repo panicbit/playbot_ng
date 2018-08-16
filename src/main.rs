@@ -26,7 +26,7 @@ use self::{
     command::Command,
     command_registry::CommandRegistry,
 };
-use module::Module;
+use crate::module::Module;
 use self::config::Config;
 
 mod context;

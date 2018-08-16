@@ -1,7 +1,10 @@
+cargo-features = ["edition"]
+
 [package]
 name = "playbot_ng"
 version = "0.1.0"
 authors = ["panicbit <panicbit.dev@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 failure = "0.1.1"

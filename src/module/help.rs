@@ -1,4 +1,4 @@
-use module::prelude::*;
+use crate::module::prelude::*;
 
 pub enum Help {}
 

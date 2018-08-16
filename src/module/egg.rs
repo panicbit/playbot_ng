@@ -1,4 +1,4 @@
-use module::prelude::*;
+use crate::module::prelude::*;
 use regex::Regex;
 use itertools::Itertools;
 use std::iter::once;

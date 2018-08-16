@@ -1,4 +1,4 @@
-use module::prelude::*;
+use crate::module::prelude::*;
 use playground::{self, ExecuteRequest, Channel, Mode};
 use reqwest::{self, Client};
 use regex::Regex;

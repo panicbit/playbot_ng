@@ -1,12 +1,15 @@
 use irc::client::prelude::{Message, IrcClient};
+use failure::Error;
 use std::collections::HashMap;
 use super::{Context, Flow, Command};
 use std::iter;
+use std::sync::Arc;
+use futures::Future;
 
 pub struct CommandRegistry {
     command_prefix: String,
-    named_handlers: HashMap<String, Box<FnMut(&Context, &[&str]) -> Flow>>,
-    fallback_handlers: Vec<Box<FnMut(&Context) -> Flow>>,
+    named_handlers: HashMap<String, Box<Fn(&Context, &[&str]) -> Flow>>,
+    fallback_handlers: Vec<Box<Fn(&Context) -> Flow>>,
 }
 
 impl CommandRegistry {
@@ -33,21 +36,25 @@ impl CommandRegistry {
         self.fallback_handlers.push(Box::new(handler));
     }
 
-    pub fn handle_message(&mut self, client: &IrcClient, message: &Message) {
+    pub fn into_arc(self) -> Arc<Self> {
+        Arc::new(self)
+    }
+
+    pub async fn handle_message(self: Arc<Self>, client: IrcClient, message: Message) -> Result<(), Error> {
         let context = match Context::new(&client, &message) {
             Some(context) => context,
-            None => return,
+            None => return Ok(()),
         };
 
         if context.is_ctcp() {
-            return;
+            return Ok(());
         }
 
         // Handle the main context first
         if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
-            if let Some(handler) = self.named_handlers.get_mut(command.name()) {
+            if let Some(handler) = self.named_handlers.get(command.name()) {
                 if handler(&context, command.args()) == Flow::Break {
-                    return;
+                    return Ok(());
                 }
             }
         }
@@ -57,7 +64,7 @@ impl CommandRegistry {
         let mut any_inline_command_succeded = false;
         for context in contexts.take(3) {
             if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
-                if let Some(handler) = self.named_handlers.get_mut(command.name()) {
+                if let Some(handler) = self.named_handlers.get(command.name()) {
                     if handler(&context, command.args()) == Flow::Break {
                         any_inline_command_succeded = true;
                     }
@@ -66,13 +73,15 @@ impl CommandRegistry {
         }
 
         if any_inline_command_succeded {
-            return;
+            return Ok(());
         }
 
-        for handler in &mut self.fallback_handlers {
+        for handler in &self.fallback_handlers {
             if handler(&context) == Flow::Break {
-                return;
+                return Ok(());
             }
         }
+
+        Ok(())
     }
 }

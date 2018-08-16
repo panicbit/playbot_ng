@@ -1,5 +1,7 @@
 #![feature(box_patterns)]
-#![feature(option_filter)]
+#![feature(futures_api)]
+#![feature(async_await)]
+#![feature(arbitrary_self_types)]
 extern crate failure;
 extern crate irc;
 extern crate reqwest;
@@ -13,6 +15,7 @@ extern crate serde;
 extern crate toml;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_derive;
+extern crate futures;
 
 use std::thread;
 use chrono::{
@@ -20,6 +23,8 @@ use chrono::{
     Duration,
 };
 use irc::client::prelude::{Config as IrcConfig, IrcReactor, ClientExt};
+use futures::prelude::*;
+use futures::compat::TokioDefaultSpawn;
 use failure::Error;
 use self::{
     context::Context,
@@ -60,7 +65,7 @@ pub fn run_instance(config: &IrcConfig) {
                 eprintln!("[ERR] Disconnected");
 
                 for cause in e.causes() {
-                    eprintln!("[ERR] Caused by: {}", cause);
+                    eprintln!("[CAUSE] {}", cause);
                 }
             }
         }
@@ -86,10 +91,24 @@ pub fn connect_and_handle(config: &IrcConfig) -> Result<(), Error> {
 
     client.identify()?;
 
+    let commands = commands.into_arc();
+
     reactor
         .register_client_with_handler(client, move |client, message| {
-            commands.handle_message(&client, &message);
-            Ok(())
+            commands.clone()
+                .handle_message(client.clone(), message)
+                .map(|res| {
+                    if let Err(e) = res {
+                        eprintln!("[ERR] {}", e);
+
+                        for cause in e.causes() {
+                            eprintln!("[CAUSE]: {}", cause);
+                        }
+                    };
+                    Ok(())
+                })
+                .boxed()
+                .compat(TokioDefaultSpawn)
         });
 
     // reactor blocks until a disconnection or other in `irc` error

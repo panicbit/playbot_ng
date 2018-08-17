@@ -19,7 +19,7 @@ mod version;
 pub use self::version::{Version, version, async_version};
 
 pub mod paste;
-pub use self::paste::paste;
+pub use self::paste::{paste, async_paste};
 
 #[derive(Serialize,Debug,Copy,Clone)]
 #[serde(rename_all = "lowercase")]

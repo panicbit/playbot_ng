@@ -77,7 +77,7 @@ fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a
         request.set_channel(channel);
         request.set_mode(mode);
 
-        execute(&ctx, &http, &request);
+        await!(execute(handle, &ctx, &http, &request));
 
         Flow::Break
     })().boxed())
@@ -100,47 +100,49 @@ fn print_version<'a>(handle: Handle, channel: Channel, ctx: &'a Context) -> impl
     })()
 }
 
-pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {
-    let resp = match playground::execute(http, &request) {
-        Ok(resp) => resp,
-        Err(e) => return {
-            eprintln!("Failed to execute code: {:?}", e);
-        },
-    };
-
-    let output = if resp.success { &resp.stdout } else { &resp.stderr };
-    let take_count = if resp.success { 2 } else { 1 };
-    let lines = output
-        .lines()
-        .filter(|line| {
-            if resp.success {
-                return true;
-            }
-
-               !line.trim().starts_with("Compiling")
-            && !line.trim().starts_with("Finished")
-            && !line.trim().starts_with("Running")
-        })
-        .take(take_count);
-
-    for line in lines {
-        ctx.reply(line);
-    }
-
-    if output.lines().count() > take_count {
-        let code = format!(include_str!("../../paste_template.rs"),
-            code = request.code(),
-            stdout = resp.stdout,
-            stderr = resp.stderr,
-        );
-
-        let url = match playground::paste(http, code, request.channel(), request.mode()) {
-            Ok(url) => url,
+pub fn execute<'a>(handle: Handle, ctx: &'a Context, http: &'a Client, request: &'a ExecuteRequest) -> impl Future<Output = ()> + 'a {
+    (async move || {
+        let resp = match playground::execute(http, &request) {
+            Ok(resp) => resp,
             Err(e) => return {
-                eprintln!("Failed to paste code: {:?}", e);
+                eprintln!("Failed to execute code: {:?}", e);
             },
         };
 
-        ctx.reply(format!("~~~ Full output: {}", url));
-    }
+        let output = if resp.success { &resp.stdout } else { &resp.stderr };
+        let take_count = if resp.success { 2 } else { 1 };
+        let lines = output
+            .lines()
+            .filter(|line| {
+                if resp.success {
+                    return true;
+                }
+
+                !line.trim().starts_with("Compiling")
+                && !line.trim().starts_with("Finished")
+                && !line.trim().starts_with("Running")
+            })
+            .take(take_count);
+
+        for line in lines {
+            ctx.reply(line);
+        }
+
+        if output.lines().count() > take_count {
+            let code = format!(include_str!("../../paste_template.rs"),
+                code = request.code(),
+                stdout = resp.stdout,
+                stderr = resp.stderr,
+            );
+
+            let url = match await!(playground::async_paste(handle, code, request.channel(), request.mode())) {
+                Ok(url) => url,
+                Err(e) => return {
+                    eprintln!("Failed to paste code: {:?}", e);
+                },
+            };
+
+            ctx.reply(format!("~~~ Full output: {}", url));
+        }
+    })()
 }

@@ -97,20 +97,21 @@ pub fn connect_and_handle(config: &IrcConfig) -> Result<(), Error> {
 
     reactor
         .register_client_with_handler(client, move |client, message| {
-            commands.clone()
+            let fut = commands.clone()
                 .handle_message(handle.clone(), client.clone(), message)
-                .map(|res| {
-                    if let Err(e) = res {
-                        eprintln!("[ERR] {}", e);
+                .map_err(|e| {
+                    eprintln!("[ERR] {}", e);
 
-                        for cause in e.causes() {
-                            eprintln!("[CAUSE]: {}", cause);
-                        }
-                    };
-                    Ok(())
+                    for cause in e.causes() {
+                        eprintln!("[CAUSE]: {}", cause);
+                    }
                 })
                 .boxed()
-                .compat(TokioDefaultSpawn)
+                .compat(TokioDefaultSpawn);
+
+            handle.spawn(fut);
+
+            Ok(())
         });
 
     // reactor blocks until a disconnection or other in `irc` error

@@ -1,4 +1,4 @@
-use {Channel, CrateType, Mode};
+use crate::{Channel, CrateType, Mode};
 use std::borrow::Cow;
 use reqwest::{Client, Error};
 

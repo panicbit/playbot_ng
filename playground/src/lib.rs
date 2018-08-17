@@ -1,3 +1,6 @@
+#![feature(futures_api)]
+#![feature(async_await)]
+#![feature(await_macro)]
 extern crate failure;
 extern crate reqwest;
 #[macro_use]
@@ -6,17 +9,17 @@ extern crate serde_derive;
 use std::str;
 
 pub mod execute;
-pub use execute::{
+pub use self::execute::{
     execute,
     Request as ExecuteRequest,
     Response as ExecuteResponse,
 };
 
 mod version;
-pub use version::{version, Version};
+pub use self::version::{Version, version, async_version};
 
 pub mod paste;
-pub use paste::paste;
+pub use self::paste::paste;
 
 #[derive(Serialize,Debug,Copy,Clone)]
 #[serde(rename_all = "lowercase")]

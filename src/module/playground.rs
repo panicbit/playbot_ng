@@ -18,7 +18,7 @@ impl Module for Playground {
     }
 }
 
-fn playground_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
+fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
     LocalFutureObj::new((async move || {
         let http = reqwest::Client::new();
 
@@ -56,7 +56,7 @@ fn playground_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'
         }
 
         if show_version {
-            print_version(&http, channel, &ctx);
+            await!(print_version(handle, channel, &ctx));
             return Flow::Break;
         }
 
@@ -83,19 +83,21 @@ fn playground_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'
     })().boxed())
 }
 
-fn print_version(http: &Client, channel: Channel, ctx: &Context) {
-    let resp = match playground::version(http, channel) {
-        Err(e) => return eprintln!("Failed to get version: {:?}", e),
-        Ok(resp) => resp,
-    };
-    
-    let version = format!("{version} ({hash:.9} {date})",
-        version = resp.version,
-        hash = resp.hash,
-        date = resp.date,
-    );
+fn print_version<'a>(handle: Handle, channel: Channel, ctx: &'a Context) -> impl Future<Output = ()> + 'a {
+    (async move || {
+        let resp = match await!(playground::async_version(handle, channel)) {
+            Err(e) => return eprintln!("Failed to get version: {:?}", e),
+            Ok(resp) => resp,
+        };
 
-    ctx.reply(version);
+        let version = format!("{version} ({hash:.9} {date})",
+            version = resp.version,
+            hash = resp.hash,
+            date = resp.date,
+        );
+
+        ctx.reply(version);
+    })()
 }
 
 pub fn execute(ctx: &Context, http: &Client, request: &ExecuteRequest) {

@@ -1,4 +1,4 @@
-use {Channel, Mode};
+use crate::{Channel, Mode};
 use reqwest::{Client, Error};
 
 pub fn paste<S: AsRef<str>>(client: &Client, text: S, channel: Channel, mode: Mode) -> Result<String, Error> {

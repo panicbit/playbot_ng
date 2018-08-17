@@ -82,6 +82,7 @@ pub fn run_instance(config: &IrcConfig) {
 pub fn connect_and_handle(config: &IrcConfig) -> Result<(), Error> {
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
     let mut reactor = IrcReactor::new()?;
+    let handle = reactor.inner_handle().clone();
     let client = reactor.prepare_client_and_connect(&config)?;
     let mut commands = CommandRegistry::new("?");
 
@@ -97,7 +98,7 @@ pub fn connect_and_handle(config: &IrcConfig) -> Result<(), Error> {
     reactor
         .register_client_with_handler(client, move |client, message| {
             commands.clone()
-                .handle_message(client.clone(), message)
+                .handle_message(handle.clone(), client.clone(), message)
                 .map(|res| {
                     if let Err(e) = res {
                         eprintln!("[ERR] {}", e);

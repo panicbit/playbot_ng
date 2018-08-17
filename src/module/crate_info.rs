@@ -4,7 +4,8 @@ use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 use itertools::Itertools;
 use reqwest::StatusCode::NotFound;
 use futures::prelude::*;
-use futures::future::FutureObj;
+use futures::future::LocalFutureObj;
+use tokio_core::reactor::Handle;
 
 pub enum CrateInfo {}
 
@@ -14,14 +15,14 @@ impl Module for CrateInfo {
     }
 }
 
-fn crate_handler<'a>(ctx: &'a Context, args: &'a [&str]) -> FutureObj<'a, Flow> {
-    FutureObj::new((async move || {
+fn crate_handler<'a>(handle: Handle, ctx: &'a Context, args: &'a [&str]) -> LocalFutureObj<'a, Flow> {
+    LocalFutureObj::new((async move || {
         let crate_name = match args.get(0) {
             Some(name) => name,
             None => return Flow::Continue,
         };
 
-        let info = match cratesio::crate_info(crate_name) {
+        let info = match await!(cratesio::async_crate_info(handle, crate_name)) {
             Ok(info) => info,
             // TODO: Use proper error types
             Err(ref err) if err.status() == Some(NotFound) => {

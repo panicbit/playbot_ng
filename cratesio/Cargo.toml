@@ -1,10 +1,15 @@
+cargo-features = ["edition"]
+
 [package]
 name = "cratesio"
 version = "0.1.0"
 authors = ["panicbit <panicbit.dev@gmail.com>"]
+edition = "2018"
 
 [dependencies]
-reqwest = "0.8.5"
+reqwest = { version = "0.8.5", features = ["unstable"] }
 url = "1.7.0"
 serde = "1.0.36"
 serde_derive = "1.0.36"
+futures-preview = { version = "0.3.0-alpha.3", features = ["tokio-compat"] }
+tokio-core = "0.1.17"

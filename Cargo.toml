@@ -22,5 +22,6 @@ serde_derive = "1.0.70"
 serde = "1.0.70"
 toml = "0.4.6"
 futures-preview = { version = "0.3.0-alpha.3", features = ["tokio-compat"] }
+tokio-core = "0.1.17"
 
 [workspace]

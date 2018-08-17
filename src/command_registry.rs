@@ -4,12 +4,13 @@ use std::collections::HashMap;
 use super::{Context, Flow, Command};
 use std::iter;
 use std::sync::Arc;
-use futures::future::FutureObj;
+use futures::future::LocalFutureObj;
+use tokio_core::reactor::Handle;
 
 pub struct CommandRegistry {
     command_prefix: String,
-    named_handlers: HashMap<String, Box<for<'a> Fn(&'a Context, &'a [&str]) -> FutureObj<'a, Flow>>>,
-    fallback_handlers: Vec<Box<for<'a> Fn(&'a Context) -> FutureObj<'a, Flow>>>,
+    named_handlers: HashMap<String, Box<for<'a> Fn(Handle, &'a Context, &'a [&str]) -> LocalFutureObj<'a, Flow>>>,
+    fallback_handlers: Vec<Box<for<'a> Fn(Handle, &'a Context) -> LocalFutureObj<'a, Flow>>>,
 }
 
 impl CommandRegistry {
@@ -24,14 +25,14 @@ impl CommandRegistry {
     pub fn set_named_handler(
         &mut self,
         name: impl Into<String>,
-        handler: impl for<'a> Fn(&'a Context, &'a [&str]) -> FutureObj<'a, Flow> + 'static,
+        handler: impl for<'a> Fn(Handle, &'a Context, &'a [&str]) -> LocalFutureObj<'a, Flow> + 'static,
     ) {
         self.named_handlers.insert(name.into(), Box::new(handler));  
     }
 
     pub fn add_fallback_handler(
         &mut self,
-        handler: impl for<'a> Fn(&'a Context) -> FutureObj<'a, Flow> + 'static,
+        handler: impl for<'a> Fn(Handle, &'a Context) -> LocalFutureObj<'a, Flow> + 'static,
     ) {
         self.fallback_handlers.push(Box::new(handler));
     }
@@ -40,7 +41,7 @@ impl CommandRegistry {
         Arc::new(self)
     }
 
-    pub async fn handle_message(self: Arc<Self>, client: IrcClient, message: Message) -> Result<(), Error> {
+    pub async fn handle_message(self: Arc<Self>, remote: Handle, client: IrcClient, message: Message) -> Result<(), Error> {
         let context = match Context::new(&client, &message) {
             Some(context) => context,
             None => return Ok(()),
@@ -53,7 +54,7 @@ impl CommandRegistry {
         // Handle the main context first
         if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
             if let Some(handler) = self.named_handlers.get(command.name()) {
-                if await!(handler(&context, command.args())) == Flow::Break {
+                if await!(handler(remote.clone(), &context, command.args())) == Flow::Break {
                     return Ok(());
                 }
             }
@@ -65,7 +66,7 @@ impl CommandRegistry {
         for context in contexts.take(3) {
             if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
                 if let Some(handler) = self.named_handlers.get(command.name()) {
-                    if await!(handler(&context, command.args())) == Flow::Break {
+                    if await!(handler(remote.clone(), &context, command.args())) == Flow::Break {
                         any_inline_command_succeded = true;
                     }
                 }
@@ -77,7 +78,7 @@ impl CommandRegistry {
         }
 
         for handler in &self.fallback_handlers {
-            if await!(handler(&context)) == Flow::Break {
+            if await!(handler(remote.clone(), &context)) == Flow::Break {
                 return Ok(());
             }
         }

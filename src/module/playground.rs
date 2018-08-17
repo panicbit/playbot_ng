@@ -2,8 +2,9 @@ use crate::module::prelude::*;
 use playground::{self, ExecuteRequest, Channel, Mode};
 use reqwest::{self, Client};
 use regex::Regex;
-use futures::future::FutureObj;
+use futures::future::LocalFutureObj;
 use futures::prelude::*;
+use tokio_core::reactor::Handle;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
@@ -17,8 +18,8 @@ impl Module for Playground {
     }
 }
 
-fn playground_handler<'a>(ctx: &'a Context) -> FutureObj<'a, Flow> {
-    FutureObj::new((async move || {
+fn playground_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
+    LocalFutureObj::new((async move || {
         let http = reqwest::Client::new();
 
         if !ctx.is_directly_addressed() {

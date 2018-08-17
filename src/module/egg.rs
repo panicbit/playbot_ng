@@ -2,8 +2,9 @@ use crate::module::prelude::*;
 use regex::Regex;
 use itertools::Itertools;
 use std::iter::once;
-use futures::future::FutureObj;
+use futures::future::LocalFutureObj;
 use futures::prelude::*;
+use tokio_core::reactor::Handle;
 
 lazy_static! {
     static ref SCRIPT: Vec<(Regex, fn(&str) -> String)> = vec![
@@ -49,8 +50,8 @@ impl Module for Egg {
     }
 }
 
-pub fn egg_handler<'a>(ctx: &'a Context) -> FutureObj<'a, Flow> {
-    FutureObj::new((async move || {
+pub fn egg_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
+    LocalFutureObj::new((async move || {
         for dialog in &*SCRIPT {
             if let Some(caps) = dialog.0.captures(ctx.body()) {
                 if let Some(nick) = caps.name("nick") {

@@ -11,6 +11,7 @@ use std::str;
 pub mod execute;
 pub use self::execute::{
     execute,
+    async_execute,
     Request as ExecuteRequest,
     Response as ExecuteResponse,
 };

@@ -1,6 +1,5 @@
 use crate::module::prelude::*;
 use playground::{self, ExecuteRequest, Channel, Mode};
-use reqwest::{self, Client};
 use regex::Regex;
 use futures::future::LocalFutureObj;
 use futures::prelude::*;
@@ -20,8 +19,6 @@ impl Module for Playground {
 
 fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
     LocalFutureObj::new((async move || {
-        let http = reqwest::Client::new();
-
         if !ctx.is_directly_addressed() {
             return Flow::Continue;
         }
@@ -77,7 +74,7 @@ fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a
         request.set_channel(channel);
         request.set_mode(mode);
 
-        await!(execute(handle, &ctx, &http, &request));
+        await!(execute(handle, &ctx, &request));
 
         Flow::Break
     })().boxed())
@@ -100,9 +97,9 @@ fn print_version<'a>(handle: Handle, channel: Channel, ctx: &'a Context) -> impl
     })()
 }
 
-pub fn execute<'a>(handle: Handle, ctx: &'a Context, http: &'a Client, request: &'a ExecuteRequest) -> impl Future<Output = ()> + 'a {
+pub fn execute<'a>(handle: Handle, ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future<Output = ()> + 'a {
     (async move || {
-        let resp = match playground::execute(http, &request) {
+        let resp = match await!(playground::async_execute(handle.clone(), &request)) {
             Ok(resp) => resp,
             Err(e) => return {
                 eprintln!("Failed to execute code: {:?}", e);

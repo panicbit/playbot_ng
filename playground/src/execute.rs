@@ -1,6 +1,10 @@
 use crate::{Channel, CrateType, Mode};
 use std::borrow::Cow;
 use reqwest::{Client, Error};
+use reqwest::unstable::r#async as async_reqwest;
+use futures::prelude::*;
+use futures::compat::Future01CompatExt;
+use tokio_core::reactor::Handle;
 
 pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
     let resp = client
@@ -11,6 +15,23 @@ pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
         .json()?;
     
     Ok(resp)
+}
+
+pub fn async_execute<'a>(handle: Handle, req: &'a Request) -> impl Future<Output = Result<Response, Error>> + 'a {
+    (async move || {
+        let url = "https://play.rust-lang.org/execute";
+        let client = async_reqwest::Client::new(&handle);
+        let resp = await!(
+            client.post(url)
+            .json(req)
+            .send()
+            .compat()
+        )?;
+        let mut resp = resp.error_for_status()?;
+        let resp = await!(resp.json().compat())?;
+
+        Ok(resp)
+    })()
 }
 
 #[derive(Serialize,Debug)]

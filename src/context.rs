@@ -1,7 +1,7 @@
 use irc;
 use irc::client::prelude::*;
 use regex::Regex;
-use std::rc::Rc;
+use std::sync::Arc;
 
 type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
 
@@ -15,7 +15,7 @@ pub struct Context<'a> {
     source_nickname: &'a str,
     target: &'a str,
     client: &'a IrcClient,
-    current_nickname: Rc<String>,
+    current_nickname: Arc<String>,
 }
 
 impl<'a> Context<'a> {
@@ -25,7 +25,7 @@ impl<'a> Context<'a> {
             _ => return None,
         };
 
-        let current_nickname = Rc::new(client.current_nickname().to_owned());
+        let current_nickname = Arc::new(client.current_nickname().to_owned());
 
         let source_nickname = message.source_nickname()?;
 
@@ -114,7 +114,7 @@ impl<'a> Context<'a> {
         self.source_nickname
     }
 
-    pub fn current_nickname(&self) -> Rc<String> {
+    pub fn current_nickname(&self) -> Arc<String> {
         self.current_nickname.clone()
     }
 

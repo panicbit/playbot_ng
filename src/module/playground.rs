@@ -2,6 +2,8 @@ use crate::module::prelude::*;
 use playground::{self, ExecuteRequest, Channel, Mode};
 use reqwest::{self, Client};
 use regex::Regex;
+use futures::future::FutureObj;
+use futures::prelude::*;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
@@ -11,13 +13,14 @@ pub enum Playground {}
 
 impl Module for Playground {
     fn init(commands: &mut CommandRegistry) {
-        commands.add_fallback_handler(playground_handler());
+        commands.add_fallback_handler(playground_handler);
     }
 }
 
-fn playground_handler() -> impl Fn(&Context) -> Flow {
-    let http = reqwest::Client::new();
-    move |ctx| {
+fn playground_handler<'a>(ctx: &'a Context) -> FutureObj<'a, Flow> {
+    FutureObj::new((async move || {
+        let http = reqwest::Client::new();
+
         if !ctx.is_directly_addressed() {
             return Flow::Continue;
         }
@@ -76,7 +79,7 @@ fn playground_handler() -> impl Fn(&Context) -> Flow {
         execute(&ctx, &http, &request);
 
         Flow::Break
-    }
+    })().boxed())
 }
 
 fn print_version(http: &Client, channel: Channel, ctx: &Context) {

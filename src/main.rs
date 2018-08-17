@@ -1,6 +1,7 @@
 #![feature(box_patterns)]
 #![feature(futures_api)]
 #![feature(async_await)]
+#![feature(await_macro)]
 #![feature(arbitrary_self_types)]
 extern crate failure;
 extern crate irc;

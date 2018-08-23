@@ -46,7 +46,7 @@ fn main() {
     let config = Config::load("config.toml").expect("failed to load config.toml");
 
     let threads: Vec<_> = config.instances.into_iter().map(|config| {
-        thread::spawn(move || run_instance(&config))
+        thread::spawn(move || run_instance(config))
     }).collect();
 
     for thread in threads {
@@ -54,13 +54,13 @@ fn main() {
     }
 }
 
-pub fn run_instance(config: &IrcConfig) {
+pub fn run_instance(config: IrcConfig) {
     let sleep_dur = Duration::seconds(5).to_std().unwrap();
 
     loop {   
         println!("{} Starting up", Utc::now());
 
-        match connect_and_handle(&config) {
+        match connect_and_handle(config.clone()) {
             Ok(()) => eprintln!("[OK] Disconnected for an unknown reason"),
             Err(e) => {
                 eprintln!("[ERR] Disconnected");
@@ -79,11 +79,11 @@ pub fn run_instance(config: &IrcConfig) {
     }
 }
 
-pub fn connect_and_handle(config: &IrcConfig) -> Result<(), Error> {
+pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
     let mut reactor = IrcReactor::new()?;
     let handle = reactor.inner_handle().clone();
-    let client = reactor.prepare_client_and_connect(&config)?;
+    let client = reactor.prepare_client_and_connect(config)?;
     let mut commands = CommandRegistry::new("?");
 
     module::CrateInfo::init(&mut commands);

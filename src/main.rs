@@ -65,7 +65,7 @@ pub fn run_instance(config: IrcConfig) {
             Err(e) => {
                 eprintln!("[ERR] Disconnected");
 
-                for cause in e.causes() {
+                for cause in e.iter_chain() {
                     eprintln!("[CAUSE] {}", cause);
                 }
             }
@@ -102,7 +102,7 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
                 .map_err(|e| {
                     eprintln!("[ERR] {}", e);
 
-                    for cause in e.causes() {
+                    for cause in e.iter_chain() {
                         eprintln!("[CAUSE]: {}", cause);
                     }
                 })

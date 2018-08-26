@@ -33,12 +33,12 @@ pub fn async_crate_info(handle: Handle, name: &str) -> impl Future<Output = Resu
         utf8_percent_encode(name, PATH_SEGMENT_ENCODE_SET).collect::<String>()
     );
 
-    (async move || {
+    async move {
         let mut resp = await!(client.get(&url).send().compat())?;
         let info = await!(resp.json().compat())?;
 
         Ok(info)
-    })()
+    }
 }
 
 #[derive(Deserialize,Debug,Clone,PartialEq,Eq)]

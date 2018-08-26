@@ -51,7 +51,7 @@ impl Module for Egg {
 }
 
 pub fn egg_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
-    LocalFutureObj::new((async move || {
+    LocalFutureObj::new(async move {
         for dialog in &*SCRIPT {
             if let Some(caps) = dialog.0.captures(ctx.body()) {
                 if let Some(nick) = caps.name("nick") {
@@ -71,7 +71,7 @@ pub fn egg_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, 
         }
 
         Flow::Continue
-    })().boxed())
+    }.boxed())
 }
 
 fn re(re: &str) -> Regex {

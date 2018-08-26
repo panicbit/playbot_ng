@@ -16,7 +16,7 @@ pub fn version(client: &Client, channel: Channel) -> Result<Version, Error> {
 }
 
 pub fn async_version(handle: Handle, channel: Channel) -> impl Future<Output = Result<Version, Error>> {
-    (async move || {
+    async move {
         let client = async_reqwest::Client::new(&handle);
         let url = format!("https://play.rust-lang.org/meta/version/{}", channel.as_str());
 
@@ -25,7 +25,7 @@ pub fn async_version(handle: Handle, channel: Channel) -> impl Future<Output = R
         let resp = await!(resp.json().compat())?;
 
         Ok(resp)
-    })()
+    }
 }
 
 #[derive(Deserialize)]

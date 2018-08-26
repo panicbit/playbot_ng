@@ -18,7 +18,7 @@ impl Module for Playground {
 }
 
 fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
-    LocalFutureObj::new((async move || {
+    LocalFutureObj::new(async move {
         if !ctx.is_directly_addressed() {
             return Flow::Continue;
         }
@@ -77,11 +77,11 @@ fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a
         await!(execute(handle, &ctx, &request));
 
         Flow::Break
-    })().boxed())
+    }.boxed())
 }
 
 fn print_version<'a>(handle: Handle, channel: Channel, ctx: &'a Context) -> impl Future<Output = ()> + 'a {
-    (async move || {
+    async move {
         let resp = match await!(playground::async_version(handle, channel)) {
             Err(e) => return eprintln!("Failed to get version: {:?}", e),
             Ok(resp) => resp,
@@ -94,11 +94,11 @@ fn print_version<'a>(handle: Handle, channel: Channel, ctx: &'a Context) -> impl
         );
 
         ctx.reply(version);
-    })()
+    }
 }
 
 pub fn execute<'a>(handle: Handle, ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future<Output = ()> + 'a {
-    (async move || {
+    async move {
         let resp = match await!(playground::async_execute(handle.clone(), &request)) {
             Ok(resp) => resp,
             Err(e) => return {
@@ -141,5 +141,5 @@ pub fn execute<'a>(handle: Handle, ctx: &'a Context, request: &'a ExecuteRequest
 
             ctx.reply(format!("~~~ Full output: {}", url));
         }
-    })()
+    }
 }

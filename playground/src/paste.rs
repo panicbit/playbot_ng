@@ -24,7 +24,7 @@ pub fn paste<S: AsRef<str>>(client: &Client, text: S, channel: Channel, mode: Mo
 }
 
 pub fn async_paste<S: AsRef<str>>(handle: Handle, text: S, channel: Channel, mode: Mode) -> impl Future<Output = Result<String, Error>> {
-    (async move || {
+    async move {
         let client = async_reqwest::Client::new(&handle);
         let url = "https://play.rust-lang.org/meta/gist/";
         let resp = await!(
@@ -44,7 +44,7 @@ pub fn async_paste<S: AsRef<str>>(handle: Handle, text: S, channel: Channel, mod
         );
 
         Ok(url)
-    })()
+    }
 }
 
 #[derive(Serialize)]

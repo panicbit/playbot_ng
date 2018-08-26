@@ -16,7 +16,7 @@ impl Module for CrateInfo {
 }
 
 fn crate_handler<'a>(handle: Handle, ctx: &'a Context, args: &'a [&str]) -> LocalFutureObj<'a, Flow> {
-    LocalFutureObj::new((async move || {
+    LocalFutureObj::new(async move {
         let crate_name = match args.get(0) {
             Some(name) => name,
             None => return Flow::Continue,
@@ -48,5 +48,5 @@ fn crate_handler<'a>(handle: Handle, ctx: &'a Context, args: &'a [&str]) -> Loca
         ctx.reply(output);
 
         Flow::Break
-    })().boxed())
+    }.boxed())
 }

@@ -12,10 +12,10 @@ impl Module for Help {
 }
 
 fn help_handler<'a>(_handle: Handle, ctx: &'a Context, _args: &'a [&str]) -> LocalFutureObj<'a, Flow> {
-    LocalFutureObj::new((async move || {
+    LocalFutureObj::new(async move {
         display_help(ctx);
         Flow::Break
-    })().boxed())
+    }.boxed())
 }
 
 pub fn display_help(ctx: &Context) {

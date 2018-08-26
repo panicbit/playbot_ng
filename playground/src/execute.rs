@@ -18,7 +18,7 @@ pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
 }
 
 pub fn async_execute<'a>(handle: Handle, req: &'a Request) -> impl Future<Output = Result<Response, Error>> + 'a {
-    (async move || {
+    async move {
         let url = "https://play.rust-lang.org/execute";
         let client = async_reqwest::Client::new(&handle);
         let resp = await!(
@@ -31,7 +31,7 @@ pub fn async_execute<'a>(handle: Handle, req: &'a Request) -> impl Future<Output
         let resp = await!(resp.json().compat())?;
 
         Ok(resp)
-    })()
+    }
 }
 
 #[derive(Serialize,Debug)]

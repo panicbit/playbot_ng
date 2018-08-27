@@ -5,13 +5,13 @@ extern crate reqwest;
 extern crate url;
 #[macro_use]
 extern crate serde_derive;
-extern crate futures;
 extern crate tokio_core;
+#[macro_use]
+extern crate tokio;
 
 use tokio_core::reactor::Handle;
 use reqwest::unstable::r#async as async_reqwest;
-use futures::prelude::*;
-use futures::compat::Future01CompatExt;
+use std::future::Future;
 
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 
@@ -34,8 +34,8 @@ pub fn async_crate_info(handle: Handle, name: &str) -> impl Future<Output = Resu
     );
 
     async move {
-        let mut resp = await!(client.get(&url).send().compat())?;
-        let info = await!(resp.json().compat())?;
+        let mut resp = await!(client.get(&url).send())?;
+        let info = await!(resp.json())?;
 
         Ok(info)
     }

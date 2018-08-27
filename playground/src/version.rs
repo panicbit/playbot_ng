@@ -1,9 +1,8 @@
 use crate::Channel;
 use reqwest::{Client, Error};
 use reqwest::unstable::r#async as async_reqwest;
-use futures::prelude::*;
-use futures::compat::Future01CompatExt;
 use tokio_core::reactor::Handle;
+use std::future::Future;
 
 pub fn version(client: &Client, channel: Channel) -> Result<Version, Error> {
     let resp = client
@@ -20,9 +19,9 @@ pub fn async_version(handle: Handle, channel: Channel) -> impl Future<Output = R
         let client = async_reqwest::Client::new(&handle);
         let url = format!("https://play.rust-lang.org/meta/version/{}", channel.as_str());
 
-        let resp = await!(client.get(&url).send().compat())?;
+        let resp = await!(client.get(&url).send())?;
         let mut resp = resp.error_for_status()?;
-        let resp = await!(resp.json().compat())?;
+        let resp = await!(resp.json())?;
 
         Ok(resp)
     }

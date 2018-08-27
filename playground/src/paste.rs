@@ -1,9 +1,8 @@
 use crate::{Channel, Mode};
 use reqwest::{Client, Error};
 use reqwest::unstable::r#async as async_reqwest;
-use futures::prelude::*;
-use futures::compat::Future01CompatExt;
 use tokio_core::reactor::Handle;
+use std::future::Future;
 
 pub fn paste<S: AsRef<str>>(client: &Client, text: S, channel: Channel, mode: Mode) -> Result<String, Error> {
     let gist_id = client
@@ -32,10 +31,9 @@ pub fn async_paste<S: AsRef<str>>(handle: Handle, text: S, channel: Channel, mod
                 .post(url)
                 .json(&Request::new(text.as_ref()))
                 .send()
-                .compat()
         )?;
         let mut resp = resp.error_for_status()?;
-        let gist_id = await!(resp.json::<Response>().compat())?.id;
+        let gist_id = await!(resp.json::<Response>())?.id;
 
         let url = format!("https://play.rust-lang.org/?gist={gist}&version={channel}&mode={mode}",
             gist = gist_id,

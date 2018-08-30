@@ -47,10 +47,6 @@ impl CommandRegistry {
             None => return Ok(()),
         };
 
-        if context.is_ctcp() {
-            return Ok(());
-        }
-
         // Handle the main context first
         if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
             if let Some(handler) = self.named_handlers.get(command.name()) {

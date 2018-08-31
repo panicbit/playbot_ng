@@ -42,7 +42,7 @@ lazy_static! {
     ];
 }
 
-pub enum Egg {}
+pub(crate) enum Egg {}
 
 impl Module for Egg {
     fn init(commands: &mut CommandRegistry) {
@@ -50,7 +50,7 @@ impl Module for Egg {
     }
 }
 
-pub fn egg_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
+fn egg_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
     LocalFutureObj::new(async move {
         for dialog in &*SCRIPT {
             if let Some(caps) = dialog.0.captures(ctx.body()) {

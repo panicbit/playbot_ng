@@ -1,28 +1,27 @@
 use self::prelude::*;
 
-pub mod crate_info;
-pub use self::crate_info::CrateInfo;
+pub(crate) mod crate_info;
+pub(crate) use self::crate_info::CrateInfo;
 
-pub mod playground;
-pub use self::playground::Playground;
+pub(crate) mod playground;
+pub(crate) use self::playground::Playground;
 
 // pub mod codedb;
-pub mod egg;
-pub use self::egg::Egg;
+pub(crate) mod egg;
+pub(crate) use self::egg::Egg;
 
-pub mod help;
-pub use self::help::Help;
+pub(crate) mod help;
+pub(crate) use self::help::Help;
 
 mod prelude {
-    pub(in super) use crate::{
+    pub(crate) use crate::{
         Context,
         Flow,
         CommandRegistry,
     };
-    pub use super::Module;
-    pub use failure::Error;
+    pub(crate) use super::Module;
 }
 
-pub trait Module {
+pub(crate) trait Module {
     fn init(commands: &mut CommandRegistry) where Self: Sized;
 }

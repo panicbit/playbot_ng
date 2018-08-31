@@ -6,9 +6,9 @@ use std::sync::Arc;
 use futures::future::LocalFutureObj;
 use tokio_core::reactor::Handle;
 use std::future::Future;
-use crate::message::IrcMessage;
+use crate::Message;
 
-pub struct CommandRegistry {
+pub(crate) struct CommandRegistry {
     command_prefix: String,
     named_handlers: HashMap<String, Box<for<'a> Fn(Handle, &'a Context, &'a [&str]) -> LocalFutureObj<'a, Flow>>>,
     fallback_handlers: Vec<Box<for<'a> Fn(Handle, &'a Context) -> LocalFutureObj<'a, Flow>>>,
@@ -42,9 +42,9 @@ impl CommandRegistry {
         Arc::new(self)
     }
 
-    pub fn handle_message<'a>(self: Arc<Self>, remote: Handle, message: &'a IrcMessage) -> impl Future<Output = Result<(), Error>> + 'a {
+    pub fn handle_message<'a>(self: Arc<Self>, remote: Handle, message: &'a Message) -> impl Future<Output = Result<(), Error>> + 'a {
         async move {
-            let context = match Context::new(&message) {
+            let context = match Context::new(message) {
                 Some(context) => context,
                 None => return Ok(()),
             };

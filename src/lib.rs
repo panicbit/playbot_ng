@@ -13,7 +13,6 @@ use self::{
     command::Command,
     command_registry::CommandRegistry,
 };
-pub use self::message::IrcMessage;
 use crate::module::Module;
 use tokio_core::reactor::Handle;
 
@@ -23,6 +22,7 @@ mod command_registry;
 mod module;
 // mod codedb;
 mod message;
+pub use self::message::Message;
 
 pub struct Playbot {
     commands: Arc<CommandRegistry>,
@@ -44,7 +44,7 @@ impl Playbot {
         }
     }
 
-    pub fn handle_message<'a>(&self, message: IrcMessage<'a>) -> impl Future<Output = Result<(), Error>> + 'a {
+    pub fn handle_message<'a, M: Message + 'a>(&self, message: M) -> impl Future<Output = Result<(), Error>> + 'a {
         let commands = self.commands.clone();
         let handle = self.handle.clone();
 
@@ -55,7 +55,7 @@ impl Playbot {
 }
 
 #[derive(PartialEq, Eq)]
-pub enum Flow {
+pub(crate) enum Flow {
     Break,
     Continue,
 }

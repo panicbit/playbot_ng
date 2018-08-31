@@ -1,16 +1,16 @@
 use regex::Regex;
 use std::sync::Arc;
 use failure::Error;
-use crate::message::{Message, IrcMessage};
+use crate::Message;
 
 #[derive(Clone)]
 pub struct Context<'a> {
     body: &'a str,
-    message: &'a IrcMessage<'a>,
+    message: &'a Message,
 }
 
 impl<'a> Context<'a> {
-    pub fn new(message: &'a IrcMessage) -> Option<Self> {
+    pub fn new(message: &'a Message) -> Option<Self> {
         Some(Self {
             body: message.body(),
             message,
@@ -29,7 +29,7 @@ impl<'a> Context<'a> {
     }
 
     pub fn reply<S: AsRef<str>>(&self, message: S) -> Result<(), Error> {
-        self.message.reply(message)
+        self.message.reply(message.as_ref())
     }
 
     pub fn source_nickname(&self) -> &'a str {

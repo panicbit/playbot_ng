@@ -2,10 +2,10 @@ use failure::Error;
 use std::sync::Arc;
 use irc::client::prelude::{IrcClient, ChannelExt, ClientExt, Command};
 
-pub trait Message<'a> {
+pub trait Message {
     /// The body of the message without address prefixes.
     /// E.g. `bot: hello` would be returned as `hello`.
-    fn body(&self) -> &'a str;
+    fn body(&self) -> &str;
 
     /// Wether the message was aimed directetly at the bot,
     /// either via private message or by prefixing a channel message with
@@ -14,7 +14,7 @@ pub trait Message<'a> {
 
     fn reply<S: AsRef<str>>(&self, message: S) -> Result<(), Error>;
 
-    fn source_nickname(&self) -> &'a str;
+    fn source_nickname(&self) -> &str;
 
     fn current_nickname(&self) -> Arc<String>;
 }
@@ -97,8 +97,8 @@ impl<'a> IrcMessage<'a> {
     }
 }
 
-impl<'a> Message<'a> for IrcMessage<'a> {
-    fn body(&self) -> &'a str {
+impl<'a> Message for IrcMessage<'a> {
+    fn body(&self) -> &str {
         self.body
     }
 
@@ -123,7 +123,7 @@ impl<'a> Message<'a> for IrcMessage<'a> {
         Ok(())
     }
 
-    fn source_nickname(&self) -> &'a str {
+    fn source_nickname(&self) -> &str {
         self.source_nickname
     }
 

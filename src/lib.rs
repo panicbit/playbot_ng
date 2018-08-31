@@ -17,8 +17,10 @@ extern crate toml;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_derive;
 extern crate futures;
+extern crate tokio_core;
 
 use std::thread;
+use std::sync::Arc;
 use chrono::{
     prelude::*,
     Duration,
@@ -33,8 +35,9 @@ use self::{
     command_registry::CommandRegistry,
 };
 use crate::module::Module;
-use self::config::Config;
+pub use self::config::Config;
 use self::message::IrcMessage;
+use tokio_core::reactor::Handle;
 
 mod context;
 mod command;
@@ -43,6 +46,36 @@ mod module;
 // mod codedb;
 mod config;
 mod message;
+
+pub struct Playbot {
+    commands: Arc<CommandRegistry>,
+    handle: Handle,
+}
+
+impl Playbot {
+    pub fn new(handle: Handle) -> Self {
+        let mut commands = CommandRegistry::new("?");
+
+        module::CrateInfo::init(&mut commands);
+        module::Help::init(&mut commands);
+        module::Egg::init(&mut commands);
+        module::Playground::init(&mut commands);
+
+        Self {
+            commands: Arc::new(commands),
+            handle,
+        }
+    }
+
+    pub fn handle_message<'a>(&self, message: IrcMessage<'a>) -> impl Future<Output = Result<(), Error>> + 'a {
+        let commands = self.commands.clone();
+        let handle = self.handle.clone();
+
+        async move {
+            await!(commands.handle_message(handle, &message))
+        }
+    }
+}
 
 pub fn main() {
     let config = Config::load("config.toml").expect("failed to load config.toml");
@@ -86,31 +119,23 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
     let mut reactor = IrcReactor::new()?;
     let handle = reactor.inner_handle().clone();
     let client = reactor.prepare_client_and_connect(config)?;
-    let mut commands = CommandRegistry::new("?");
-
-    module::CrateInfo::init(&mut commands);
-    module::Help::init(&mut commands);
-    module::Egg::init(&mut commands);
-    module::Playground::init(&mut commands);
+    let playbot = Arc::new(Playbot::new(handle.clone()));
 
     client.identify()?;
 
-    let commands = commands.into_arc();
-
     reactor
     .register_client_with_handler(client, move |client, message| {
-        let fut = {
-            let handle = handle.clone();
-            let commands = commands.clone();
-            let client = client.clone();
+        let playbot = playbot.clone();
+        let client = client.clone();
 
+        handle.spawn({
             async move {
                 let message = match IrcMessage::new(&client, &message) {
                     Some(message) => message,
                     None => return Ok(()),
                 };
 
-                match await!(commands.handle_message(handle, &message)) {
+                match await!(playbot.handle_message(message)) {
                     Ok(_) => {},
                     Err(e) => {
                         eprintln!("[ERR] {}", e);
@@ -123,9 +148,7 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
 
                 Ok(())
             }
-        };
-
-        handle.spawn(fut.boxed().compat(TokioDefaultSpawn));
+        }.boxed().compat(TokioDefaultSpawn));
 
         Ok(())
     });

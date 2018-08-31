@@ -14,7 +14,6 @@ use self::{
     command_registry::CommandRegistry,
 };
 use crate::module::Module;
-use tokio_core::reactor::Handle;
 
 mod context;
 mod command;
@@ -26,11 +25,10 @@ pub use self::message::Message;
 
 pub struct Playbot {
     commands: Arc<CommandRegistry>,
-    handle: Handle,
 }
 
 impl Playbot {
-    pub fn new(handle: Handle) -> Self {
+    pub fn new() -> Self {
         let mut commands = CommandRegistry::new("?");
 
         module::CrateInfo::init(&mut commands);
@@ -40,16 +38,14 @@ impl Playbot {
 
         Self {
             commands: Arc::new(commands),
-            handle,
         }
     }
 
     pub fn handle_message<'a, M: Message + 'a>(&self, message: M) -> impl Future<Output = Result<(), Error>> + 'a {
         let commands = self.commands.clone();
-        let handle = self.handle.clone();
 
         async move {
-            await!(commands.handle_message(handle, &message))
+            await!(commands.handle_message(&message))
         }
     }
 }

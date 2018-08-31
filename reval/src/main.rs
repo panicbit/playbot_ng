@@ -1,7 +1,6 @@
 use playbot::{Playbot, Message};
 use failure::Error;
 use std::sync::Arc;
-use tokio_core::reactor::{Core, Handle};
 use futures::prelude::*;
 use futures::compat::TokioDefaultSpawn;
 use std::io::{self, Write};
@@ -40,9 +39,7 @@ impl Message for CliMessage {
 }
 
 fn main() {
-    let mut reactor = Core::new().unwrap();
-    let handle = reactor.handle().clone();
-    let playbot = Playbot::new(handle);
+    let playbot = Playbot::new();
     let stdout = io::stdout();
     let stdin = io::stdin();
 
@@ -57,6 +54,7 @@ fn main() {
 
         let message = CliMessage::new(input);
         let fut = playbot.handle_message(message).boxed().compat(TokioDefaultSpawn);
-        reactor.run(fut).unwrap();
+
+        tokio::runtime::current_thread::block_on_all(fut).unwrap();
     }
 }

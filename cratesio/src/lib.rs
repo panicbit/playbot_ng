@@ -5,12 +5,10 @@ extern crate reqwest;
 extern crate url;
 #[macro_use]
 extern crate serde_derive;
-extern crate tokio_core;
 #[macro_use]
 extern crate tokio;
 
-use tokio_core::reactor::Handle;
-use reqwest::unstable::r#async as async_reqwest;
+use reqwest::r#async as async_reqwest;
 use std::future::Future;
 
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
@@ -26,8 +24,8 @@ pub fn crate_info(name: &str) -> Result<Info, reqwest::Error> {
     Ok(info)
 }
 
-pub fn async_crate_info(handle: Handle, name: &str) -> impl Future<Output = Result<Info, reqwest::Error>> + 'static {
-    let client = async_reqwest::Client::new(&handle);
+pub fn async_crate_info(name: &str) -> impl Future<Output = Result<Info, reqwest::Error>> + 'static {
+    let client = async_reqwest::Client::new();
     let url = format!(
         "https://crates.io/api/v1/crates/{}",
         utf8_percent_encode(name, PATH_SEGMENT_ENCODE_SET).collect::<String>()

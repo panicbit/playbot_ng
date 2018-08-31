@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 playbot_ng = { path = ".." }
 failure = "0.1.2"
-tokio-core = "0.1.17"
 futures-preview = { version = "0.3.0-alpha.3", features = ["tokio-compat"] }
+tokio = "0.1.8"

@@ -3,7 +3,6 @@ use playground::{self, ExecuteRequest, Channel, Mode};
 use regex::Regex;
 use futures::future::LocalFutureObj;
 use futures::prelude::*;
-use tokio_core::reactor::Handle;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
@@ -17,7 +16,7 @@ impl Module for Playground {
     }
 }
 
-fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
+fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
     LocalFutureObj::new(async move {
         if !ctx.is_directly_addressed() {
             return Flow::Continue;
@@ -53,7 +52,7 @@ fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a
         }
 
         if show_version {
-            await!(print_version(handle, channel, &ctx));
+            await!(print_version(channel, &ctx));
             return Flow::Break;
         }
 
@@ -74,15 +73,15 @@ fn playground_handler<'a>(handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a
         request.set_channel(channel);
         request.set_mode(mode);
 
-        await!(execute(handle, &ctx, &request));
+        await!(execute(&ctx, &request));
 
         Flow::Break
     }.boxed())
 }
 
-fn print_version<'a>(handle: Handle, channel: Channel, ctx: &'a Context) -> impl Future<Output = ()> + 'a {
+fn print_version<'a>(channel: Channel, ctx: &'a Context) -> impl Future<Output = ()> + 'a {
     async move {
-        let resp = match await!(playground::async_version(handle, channel)) {
+        let resp = match await!(playground::async_version(channel)) {
             Err(e) => return eprintln!("Failed to get version: {:?}", e),
             Ok(resp) => resp,
         };
@@ -97,9 +96,9 @@ fn print_version<'a>(handle: Handle, channel: Channel, ctx: &'a Context) -> impl
     }
 }
 
-pub fn execute<'a>(handle: Handle, ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future<Output = ()> + 'a {
+pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future<Output = ()> + 'a {
     async move {
-        let resp = match await!(playground::async_execute(handle.clone(), &request)) {
+        let resp = match await!(playground::async_execute(&request)) {
             Ok(resp) => resp,
             Err(e) => return {
                 eprintln!("Failed to execute code: {:?}", e);
@@ -132,7 +131,7 @@ pub fn execute<'a>(handle: Handle, ctx: &'a Context, request: &'a ExecuteRequest
                 stderr = resp.stderr,
             );
 
-            let url = match await!(playground::async_paste(handle, code, request.channel(), request.mode())) {
+            let url = match await!(playground::async_paste(code, request.channel(), request.mode())) {
                 Ok(url) => url,
                 Err(e) => return {
                     eprintln!("Failed to paste code: {:?}", e);

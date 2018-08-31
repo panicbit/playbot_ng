@@ -4,7 +4,6 @@ use itertools::Itertools;
 use std::iter::once;
 use futures::future::LocalFutureObj;
 use futures::prelude::*;
-use tokio_core::reactor::Handle;
 
 lazy_static! {
     static ref SCRIPT: Vec<(Regex, fn(&str) -> String)> = vec![
@@ -50,7 +49,7 @@ impl Module for Egg {
     }
 }
 
-fn egg_handler<'a>(_handle: Handle, ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
+fn egg_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
     LocalFutureObj::new(async move {
         for dialog in &*SCRIPT {
             if let Some(caps) = dialog.0.captures(ctx.body()) {

@@ -59,7 +59,7 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
     let mut reactor = IrcReactor::new()?;
     let handle = reactor.inner_handle().clone();
     let client = reactor.prepare_client_and_connect(config)?;
-    let playbot = Arc::new(Playbot::new(handle.clone()));
+    let playbot = Arc::new(Playbot::new());
 
     client.identify()?;
 

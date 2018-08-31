@@ -11,14 +11,13 @@ name = "playbot"
 
 [dependencies]
 failure = "0.1.2"
-reqwest = "0.8.8"
+reqwest = { version = "0.9.0-pre", git = "https://github.com/seanmonstar/reqwest", rev = "c328315" }
 url = "1.7.1"
 itertools = "0.7.8"
 regex = "1.0.4"
 lazy_static = "1.1.0"
 playground = { path = "playground" }
 cratesio = { path = "cratesio" }
-tokio-core = "0.1.17"
 futures-preview = "0.3.0-alpha.3"
 
 [workspace]

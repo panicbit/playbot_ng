@@ -1,8 +1,7 @@
 use crate::{Channel, CrateType, Mode};
 use std::borrow::Cow;
 use reqwest::{Client, Error};
-use reqwest::unstable::r#async as async_reqwest;
-use tokio_core::reactor::Handle;
+use reqwest::r#async as async_reqwest;
 use std::future::Future;
 
 pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
@@ -16,10 +15,10 @@ pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
     Ok(resp)
 }
 
-pub fn async_execute<'a>(handle: Handle, req: &'a Request) -> impl Future<Output = Result<Response, Error>> + 'a {
+pub fn async_execute<'a>(req: &'a Request) -> impl Future<Output = Result<Response, Error>> + 'a {
     async move {
         let url = "https://play.rust-lang.org/execute";
-        let client = async_reqwest::Client::new(&handle);
+        let client = async_reqwest::Client::new();
         let resp = await!(
             client.post(url)
             .json(req)

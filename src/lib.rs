@@ -34,6 +34,7 @@ use self::{
 };
 use crate::module::Module;
 use self::config::Config;
+use self::message::IrcMessage;
 
 mod context;
 mod command;
@@ -41,6 +42,7 @@ mod command_registry;
 mod module;
 // mod codedb;
 mod config;
+mod message;
 
 pub fn main() {
     let config = Config::load("config.toml").expect("failed to load config.toml");
@@ -96,23 +98,37 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
     let commands = commands.into_arc();
 
     reactor
-        .register_client_with_handler(client, move |client, message| {
-            let fut = commands.clone()
-                .handle_message(handle.clone(), client.clone(), message)
-                .map_err(|e| {
-                    eprintln!("[ERR] {}", e);
+    .register_client_with_handler(client, move |client, message| {
+        let fut = {
+            let handle = handle.clone();
+            let commands = commands.clone();
+            let client = client.clone();
 
-                    for cause in e.iter_chain() {
-                        eprintln!("[CAUSE]: {}", cause);
-                    }
-                })
-                .boxed()
-                .compat(TokioDefaultSpawn);
+            async move {
+                let message = match IrcMessage::new(&client, &message) {
+                    Some(message) => message,
+                    None => return Ok(()),
+                };
 
-            handle.spawn(fut);
+                match await!(commands.handle_message(handle, &message)) {
+                    Ok(_) => {},
+                    Err(e) => {
+                        eprintln!("[ERR] {}", e);
 
-            Ok(())
-        });
+                        for cause in e.iter_chain() {
+                            eprintln!("[CAUSE]: {}", cause);
+                        }
+                    },
+                };
+
+                Ok(())
+            }
+        };
+
+        handle.spawn(fut.boxed().compat(TokioDefaultSpawn));
+
+        Ok(())
+    });
 
     // reactor blocks until a disconnection or other in `irc` error
     reactor.run()?;

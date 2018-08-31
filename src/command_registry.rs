@@ -1,4 +1,3 @@
-use irc::client::prelude::{Message, IrcClient};
 use failure::Error;
 use std::collections::HashMap;
 use super::{Context, Flow, Command};
@@ -6,6 +5,8 @@ use std::iter;
 use std::sync::Arc;
 use futures::future::LocalFutureObj;
 use tokio_core::reactor::Handle;
+use std::future::Future;
+use crate::message::IrcMessage;
 
 pub struct CommandRegistry {
     command_prefix: String,
@@ -41,44 +42,46 @@ impl CommandRegistry {
         Arc::new(self)
     }
 
-    pub async fn handle_message(self: Arc<Self>, remote: Handle, client: IrcClient, message: Message) -> Result<(), Error> {
-        let context = match Context::new(&client, &message) {
-            Some(context) => context,
-            None => return Ok(()),
-        };
+    pub fn handle_message<'a>(self: Arc<Self>, remote: Handle, message: &'a IrcMessage) -> impl Future<Output = Result<(), Error>> + 'a {
+        async move {
+            let context = match Context::new(&message) {
+                Some(context) => context,
+                None => return Ok(()),
+            };
 
-        // Handle the main context first
-        if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
-            if let Some(handler) = self.named_handlers.get(command.name()) {
-                if await!(handler(remote.clone(), &context, command.args())) == Flow::Break {
-                    return Ok(());
-                }
-            }
-        }
-
-        // Then handle ALL inline contexts before deciding flow
-        let contexts = iter::once(context.clone()).chain(context.inline_contexts());
-        let mut any_inline_command_succeded = false;
-        for context in contexts.take(3) {
+            // Handle the main context first
             if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
                 if let Some(handler) = self.named_handlers.get(command.name()) {
                     if await!(handler(remote.clone(), &context, command.args())) == Flow::Break {
-                        any_inline_command_succeded = true;
+                        return Ok(());
                     }
                 }
             }
-        }
 
-        if any_inline_command_succeded {
-            return Ok(());
-        }
+            // Then handle ALL inline contexts before deciding flow
+            let contexts = iter::once(context.clone()).chain(context.inline_contexts());
+            let mut any_inline_command_succeded = false;
+            for context in contexts.take(3) {
+                if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
+                    if let Some(handler) = self.named_handlers.get(command.name()) {
+                        if await!(handler(remote.clone(), &context, command.args())) == Flow::Break {
+                            any_inline_command_succeded = true;
+                        }
+                    }
+                }
+            }
 
-        for handler in &self.fallback_handlers {
-            if await!(handler(remote.clone(), &context)) == Flow::Break {
+            if any_inline_command_succeded {
                 return Ok(());
             }
-        }
 
-        Ok(())
+            for handler in &self.fallback_handlers {
+                if await!(handler(remote.clone(), &context)) == Flow::Break {
+                    return Ok(());
+                }
+            }
+
+            Ok(())
+        }
     }
 }

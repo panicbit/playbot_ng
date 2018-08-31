@@ -6,6 +6,9 @@ version = "0.1.0"
 authors = ["panicbit <panicbit.dev@gmail.com>"]
 edition = "2018"
 
+[lib]
+name = "playbot"
+
 [dependencies]
 failure = "0.1.2"
 irc = { version = "0.13.5", git = "https://github.com/aatxe/irc", branch = "0.14" }

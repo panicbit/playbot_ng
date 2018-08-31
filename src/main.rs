@@ -3,7 +3,6 @@
 #![feature(async_await)]
 #![feature(await_macro)]
 #![feature(arbitrary_self_types)]
-extern crate playbot_ng;
 #[macro_use] extern crate serde_derive;
 
 use std::thread;
@@ -16,7 +15,7 @@ use irc::client::prelude::{*, Config as IrcConfig};
 use futures::prelude::*;
 use futures::compat::TokioDefaultSpawn;
 use failure::Error;
-use playbot_ng::{Playbot, Message};
+use playbot::{Playbot, Message};
 
 mod config;
 use self::config::Config;

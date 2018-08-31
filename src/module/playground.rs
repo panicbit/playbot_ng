@@ -9,7 +9,7 @@ lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
 }
 
-pub enum Playground {}
+pub(crate) enum Playground {}
 
 impl Module for Playground {
     fn init(commands: &mut CommandRegistry) {

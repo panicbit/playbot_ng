@@ -7,7 +7,7 @@ use futures::prelude::*;
 use futures::future::LocalFutureObj;
 use tokio_core::reactor::Handle;
 
-pub enum CrateInfo {}
+pub(crate) enum CrateInfo {}
 
 impl Module for CrateInfo {
     fn init(commands: &mut CommandRegistry) {

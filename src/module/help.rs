@@ -3,7 +3,7 @@ use futures::prelude::*;
 use futures::future::LocalFutureObj;
 use tokio_core::reactor::Handle;
 
-pub enum Help {}
+pub(crate) enum Help {}
 
 impl Module for Help {
     fn init(commands: &mut CommandRegistry) {
@@ -18,6 +18,6 @@ fn help_handler<'a>(_handle: Handle, ctx: &'a Context, _args: &'a [&str]) -> Loc
     }.boxed())
 }
 
-pub fn display_help(ctx: &Context) {
+pub(crate) fn display_help(ctx: &Context) {
     ctx.reply("Usage help can be found here: https://github.com/panicbit/playbot_ng/tree/master/README.md");
 }

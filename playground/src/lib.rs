@@ -3,10 +3,7 @@
 #![feature(await_macro)]
 extern crate failure;
 extern crate reqwest;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate tokio;
+#[macro_use] extern crate serde_derive;
 
 use std::str;
 

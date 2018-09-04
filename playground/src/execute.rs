@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use reqwest::{Client, Error};
 use reqwest::r#async as async_reqwest;
 use std::future::Future;
+use futures::compat::Future01CompatExt;
 
 pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
     let resp = client
@@ -23,9 +24,10 @@ pub fn async_execute<'a>(req: &'a Request) -> impl Future<Output = Result<Respon
             client.post(url)
             .json(req)
             .send()
+            .compat()
         )?;
         let mut resp = resp.error_for_status()?;
-        let resp = await!(resp.json())?;
+        let resp = await!(resp.json().compat())?;
 
         Ok(resp)
     }

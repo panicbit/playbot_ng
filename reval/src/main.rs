@@ -2,7 +2,7 @@ use playbot::{Playbot, Message};
 use failure::Error;
 use std::sync::Arc;
 use futures::prelude::*;
-use futures::compat::TokioDefaultSpawn;
+use futures::compat::TokioDefaultSpawner;
 use std::io::{self, Write};
 
 struct CliMessage {
@@ -53,7 +53,7 @@ fn main() {
         }
 
         let message = CliMessage::new(input);
-        let fut = playbot.handle_message(message).boxed().compat(TokioDefaultSpawn);
+        let fut = playbot.handle_message(message).boxed().compat(TokioDefaultSpawner);
 
         tokio::runtime::current_thread::block_on_all(fut).unwrap();
     }

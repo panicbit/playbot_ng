@@ -10,7 +10,7 @@ use chrono::{
 };
 use irc::client::prelude::{*, Config as IrcConfig};
 use futures::prelude::*;
-use futures::compat::TokioDefaultSpawn;
+use futures::compat::TokioDefaultSpawner;
 use failure::Error;
 use playbot::{Playbot, Message};
 
@@ -88,7 +88,7 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
 
                 Ok(())
             }
-        }.boxed().compat(TokioDefaultSpawn));
+        }.boxed().compat(TokioDefaultSpawner));
 
         Ok(())
     });

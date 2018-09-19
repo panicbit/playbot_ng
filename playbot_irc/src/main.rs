@@ -191,7 +191,7 @@ impl<'a> Message for IrcMessage<'a> {
 
     fn reply(&self, message: &str) -> Result<(), Error> {
         eprintln!("Replying: {:?}", message);
-        for line in message.lines() {
+        for line in message.lines().flat_map(|line| line.split('\r')) {
             if line.len() > 400 {
                 (self.reply_fn)(self.client, self.target, "<<<message too long for irc>>>")?;
                 continue;

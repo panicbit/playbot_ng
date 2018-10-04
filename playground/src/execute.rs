@@ -38,6 +38,7 @@ pub fn async_execute<'a>(req: &'a Request) -> impl Future<Output = Result<Respon
 pub struct Request<'a> {
     channel: Channel,
     mode: Mode,
+    edition: Option<String>,
     crate_type: CrateType,
     tests: bool,
     backtrace: bool,
@@ -51,6 +52,7 @@ impl<'a> Request<'a> {
             channel: Channel::Stable,
             crate_type: CrateType::Bin,
             mode: Mode::Debug,
+            edition: None,
             backtrace: false,
             tests: false,
         }
@@ -82,6 +84,14 @@ impl<'a> Request<'a> {
 
     pub fn set_backtrace(&mut self, state: bool) {
         self.backtrace = state;
+    }
+
+    pub fn edition(self) -> Option<String> {
+        self.edition
+    }
+
+    pub fn set_edition(&mut self, edition: Option<String>) {
+        self.edition = edition;
     }
 }
 

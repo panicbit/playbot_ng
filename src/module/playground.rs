@@ -24,7 +24,6 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
 
         let mut request = ExecuteRequest::new("");
         let mut body = ctx.body();
-        let mut bare = false;
 
         // Parse flags
         loop {
@@ -39,11 +38,8 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                     await!(print_version(request.channel(), &ctx));
                     return Flow::Break;
                 },
-                "--bare" | "--mini" => bare = true,
                 "--debug" => request.set_mode(Mode::Debug),
                 "--release" => request.set_mode(Mode::Release),
-                "--bin" => request.set_crate_type(CrateType::Bin),
-                "--lib" => request.set_crate_type(CrateType::Lib),
                 "--2015" => request.set_edition(Some("2015".to_owned())),
                 "--2018" => request.set_edition(Some("2018".to_owned())),
                 "help" | "h" | "-h" | "-help" | "--help" | "--h" => {
@@ -62,6 +58,24 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
 
         body = body.trim_left();
 
+        let main_ident = syn::parse_str::<syn::Ident>("main").unwrap();
+        let bare = match syn::parse_str::<syn::File>(body) {
+            Ok(syn::File { items, .. }) => {
+                let main_exists = items.iter().any(|item| match item {
+                    syn::Item::Fn(fun) => fun.ident == main_ident,
+                    _ => false,
+                });
+
+                if !main_exists {
+                    request.set_crate_type(CrateType::Lib);
+                }
+                true
+            },
+            Err(_) => {
+                false
+            },
+        };
+
         let code = if bare { body.to_string() } else {
             let crate_attrs = CRATE_ATTRS.find(body)
                 .map(|attr| attr.as_str())
@@ -76,7 +90,6 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
         };
 
         request.set_code(code);
-
         await!(execute(&ctx, &request));
 
         Flow::Break

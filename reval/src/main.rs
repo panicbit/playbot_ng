@@ -40,10 +40,9 @@ impl Message for CliMessage {
 
 fn main() {
     let playbot = Playbot::new();
+    let mut rl = rustyline::Editor::<()>::new();
 
     loop {
-        let mut rl = rustyline::Editor::<()>::new();
-
         let input = match rl.readline("> ") {
             Ok(input) => input,
             Err(ReadlineError::Utf8Error) |
@@ -54,6 +53,7 @@ fn main() {
                 break;
             }
         };
+        rl.add_history_entry(input.as_str());
 
         let message = CliMessage::new(input);
         let fut = playbot.handle_message(message).boxed().compat(TokioDefaultSpawner);

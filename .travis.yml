@@ -1,0 +1,17 @@
+language: rust
+rust:
+  - nightly
+os:
+  - linux
+  - osx
+
+matrix:
+  fast_finish: true
+
+env:
+  global:
+    - RUST_BACKTRACE=1
+
+script:
+  - cargo build --verbose
+  - cargo test -- --nocapture

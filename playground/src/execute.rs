@@ -59,11 +59,11 @@ impl<'a> Request<'a> {
         }
     }
 
-    pub fn new_with<S: Into<Cow<'a, str>>>(code: S, channel: Channel, mode: Mode, edition: Option<String>) -> Self {
+    pub fn new_with<S: Into<Cow<'a, str>>>(code: S, channel: Channel, mode: Mode, edition: Option<String>, crate_type: CrateType) -> Self {
         Self {
             code: code.into(),
             channel,
-            crate_type: CrateType::Bin,
+            crate_type,
             mode,
             edition,
             backtrace: false,
@@ -109,6 +109,14 @@ impl<'a> Request<'a> {
 
     pub fn set_edition(&mut self, edition: Option<String>) {
         self.edition = edition;
+    }
+
+    pub fn crate_type(&self) -> CrateType {
+        self.crate_type
+    }
+
+    pub fn set_crate_type(&mut self, crate_type: CrateType) {
+        self.crate_type = crate_type;
     }
 }
 

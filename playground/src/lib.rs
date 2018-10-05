@@ -37,10 +37,11 @@ impl Mode {
     }
 }
 
-#[derive(Serialize,Debug)]
+#[derive(Serialize, Debug, Copy, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum CrateType {
     Bin,
+    Lib,
 }
 
 #[derive(Serialize,Debug,Copy,Clone)]

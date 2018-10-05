@@ -1,5 +1,5 @@
 use crate::module::prelude::*;
-use playground::{self, ExecuteRequest, Channel, Mode};
+use playground::{self, ExecuteRequest, Channel, Mode, CrateType};
 use regex::Regex;
 use futures::future::LocalFutureObj;
 use futures::prelude::*;
@@ -42,6 +42,8 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                 "--bare" | "--mini" => bare = true,
                 "--debug" => request.set_mode(Mode::Debug),
                 "--release" => request.set_mode(Mode::Release),
+                "--bin" => request.set_crate_type(CrateType::Bin),
+                "--lib" => request.set_crate_type(CrateType::Lib),
                 "--2015" => request.set_edition(Some("2015".to_owned())),
                 "--2018" => request.set_edition(Some("2018".to_owned())),
                 "help" | "h" | "-h" | "-help" | "--help" | "--h" => {

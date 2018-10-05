@@ -27,28 +27,34 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
         let mut show_version = false;
         let mut bare = false;
         let mut mode = Mode::Debug;
+        let mut edition = None;
 
         // Parse flags
         loop {
             body = body.trim_left();
-            let flag = body.split_whitespace().next().unwrap_or("");
+            let flag = body.split_whitespace().next();
 
             match flag {
-                "--stable" => channel = Channel::Stable,
-                "--beta" => channel = Channel::Beta,
-                "--nightly" => channel = Channel::Nightly,
-                "--version" | "VERSION" => show_version = true,
-                "--bare" | "--mini" => bare = true,
-                "--debug" => mode = Mode::Debug,
-                "--release" => mode = Mode::Release,
-                "help" | "h" | "-h" | "-help" | "--help" | "--h" => {
+                Some("--stable") => channel = Channel::Stable,
+                Some("--beta") => channel = Channel::Beta,
+                Some("--nightly") => channel = Channel::Nightly,
+                Some("--version") | Some("VERSION") => show_version = true,
+                Some("--bare") | Some("--mini") => bare = true,
+                Some("--debug") => mode = Mode::Debug,
+                Some("--release") => mode = Mode::Release,
+                Some("--2015") => edition = Some("2015".to_owned()),
+                Some("--2018") => edition = Some("2018".to_owned()),
+                Some("help") | Some("h") | Some("-h") | Some("-help") | Some("--help") | Some("--h") => {
                     super::help::display_help(ctx);
                     return Flow::Break;
                 }
                 _ => break,
             }
 
-            body = &body[flag.len()..];
+            body = match flag {
+                Some(f) => &body[f.len()..],
+                None => body,
+            };
         }
 
         if show_version {
@@ -61,17 +67,15 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                 .map(|attr| attr.as_str())
                 .unwrap_or("");
 
-            body = &body[crate_attrs.len()..];
+            let body_code = &body[crate_attrs.len()..];
 
             format!(include_str!("../../template.rs"),
                 crate_attrs = crate_attrs,
-                code = body,
+                code = body_code,
             )
         };
 
-        let mut request = ExecuteRequest::new(code.as_str());
-        request.set_channel(channel);
-        request.set_mode(mode);
+        let request = ExecuteRequest::new_with(&code, channel,mode, edition);
 
         await!(execute(&ctx, &request));
 

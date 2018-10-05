@@ -27,8 +27,9 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
         let mut bare = false;
 
         // Parse flags
-        for flag in body.split_whitespace().next() {
+        loop {
             body = body.trim_left();
+            let flag = body.split_whitespace().next().unwrap_or("");
 
             match flag {
                 "--stable" => request.set_channel(Channel::Stable),

@@ -47,6 +47,10 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                     super::help::display_help(ctx);
                     return Flow::Break;
                 },
+                "--" => {
+                    body = &body[flag.len()..];
+                    break;
+                },
                 _ => break,
             }
 

@@ -38,6 +38,7 @@ pub fn async_execute<'a>(req: &'a Request) -> impl Future<Output = Result<Respon
 pub struct Request<'a> {
     channel: Channel,
     mode: Mode,
+    #[serde(skip_serializing_if = "Option::is_none")]
     edition: Option<String>,
     crate_type: CrateType,
     tests: bool,

@@ -24,41 +24,36 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
 
         let mut request = ExecuteRequest::new("");
         let mut body = ctx.body();
-        let mut show_version = false;
         let mut bare = false;
 
         // Parse flags
-        loop {
+        for flag in body.split_whitespace().next() {
             body = body.trim_left();
-            let flag = body.split_whitespace().next();
 
             match flag {
-                Some("--stable") => request.set_channel(Channel::Stable),
-                Some("--beta") => request.set_channel(Channel::Beta),
-                Some("--nightly") => request.set_channel(Channel::Nightly),
-                Some("--version") | Some("VERSION") => show_version = true,
-                Some("--bare") | Some("--mini") => bare = true,
-                Some("--debug") => request.set_mode(Mode::Debug),
-                Some("--release") => request.set_mode(Mode::Release),
-                Some("--2015") => request.set_edition(Some("2015".to_owned())),
-                Some("--2018") => request.set_edition(Some("2018".to_owned())),
-                Some("help") | Some("h") | Some("-h") | Some("-help") | Some("--help") | Some("--h") => {
+                "--stable" => request.set_channel(Channel::Stable),
+                "--beta" => request.set_channel(Channel::Beta),
+                "--nightly" => request.set_channel(Channel::Nightly),
+                "--version" | "VERSION" => {
+                    await!(print_version(request.channel(), &ctx));
+                    return Flow::Break;
+                },
+                "--bare" | "--mini" => bare = true,
+                "--debug" => request.set_mode(Mode::Debug),
+                "--release" => request.set_mode(Mode::Release),
+                "--2015" => request.set_edition(Some("2015".to_owned())),
+                "--2018" => request.set_edition(Some("2018".to_owned())),
+                "help" | "h" | "-h" | "-help" | "--help" | "--h" => {
                     super::help::display_help(ctx);
                     return Flow::Break;
-                }
+                },
                 _ => break,
             }
 
-            body = match flag {
-                Some(f) => &body[f.len()..],
-                None => body,
-            };
+            body = &body[flag.len()..];
         }
 
-        if show_version {
-            await!(print_version(request.channel(), &ctx));
-            return Flow::Break;
-        }
+        body = body.trim_left();
 
         let code = if bare { body.to_string() } else {
             let crate_attrs = CRATE_ATTRS.find(body)

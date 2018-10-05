@@ -19,7 +19,7 @@ use self::config::Config;
 
 pub fn main() {
     loop {
-        std::panic::catch_unwind(|| {
+        let res = std::panic::catch_unwind(|| {
             let config = Config::load("config.toml").expect("failed to load config.toml");
 
             let threads: Vec<_> = config.instances.into_iter().map(|config| {
@@ -29,6 +29,10 @@ pub fn main() {
             for thread in threads {
                 thread.join().ok();
             }
+        });
+
+        if let Err(e) = res {
+            println!("PANIC: {:?}", e);
         }
     }
 }

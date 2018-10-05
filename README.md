@@ -8,7 +8,7 @@ There's an instance of Playbot NG named **eval** running on
 ## Usage
 
 Interaction with playbot is done either via commands
-or by talking directly to it.
+or by talking directly to it.(can add Computer Vision)
 
 ### Code evaluation
 

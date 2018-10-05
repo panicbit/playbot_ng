@@ -75,7 +75,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
             )
         };
 
-        let request = ExecuteRequest::new_with(&code, channel,mode, edition);
+        let request = ExecuteRequest::new_with(&code, channel, mode, edition);
 
         await!(execute(&ctx, &request));
 

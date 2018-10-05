@@ -18,14 +18,18 @@ mod config;
 use self::config::Config;
 
 pub fn main() {
-    let config = Config::load("config.toml").expect("failed to load config.toml");
+    loop {
+        std::panic::catch_unwind(|| {
+            let config = Config::load("config.toml").expect("failed to load config.toml");
 
-    let threads: Vec<_> = config.instances.into_iter().map(|config| {
-        thread::spawn(move || run_instance(config))
-    }).collect();
+            let threads: Vec<_> = config.instances.into_iter().map(|config| {
+                thread::spawn(move || run_instance(config))
+            }).collect();
 
-    for thread in threads {
-        thread.join().ok();
+            for thread in threads {
+                thread.join().ok();
+            }
+        }
     }
 }
 

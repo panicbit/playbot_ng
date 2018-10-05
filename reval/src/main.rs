@@ -3,7 +3,7 @@ use failure::Error;
 use std::sync::Arc;
 use futures::prelude::*;
 use futures::compat::TokioDefaultSpawner;
-use std::io::{self, Write};
+use rustyline::error::ReadlineError;
 
 struct CliMessage {
     body: String,
@@ -40,17 +40,20 @@ impl Message for CliMessage {
 
 fn main() {
     let playbot = Playbot::new();
-    let stdout = io::stdout();
-    let stdin = io::stdin();
 
     loop {
-        print!("> ");
-        stdout.lock().flush().unwrap();
-        let mut input = String::new();
+        let mut rl = rustyline::Editor::<()>::new();
 
-        if stdin.read_line(&mut input).unwrap() == 0 {
-            return;
-        }
+        let input = match rl.readline("> ") {
+            Ok(input) => input,
+            Err(ReadlineError::Utf8Error) |
+            Err(ReadlineError::Eof) |
+            Err(ReadlineError::Interrupted) => break,
+            Err(err) => {
+                println!("{}", err);
+                break;
+            }
+        };
 
         let message = CliMessage::new(input);
         let fut = playbot.handle_message(message).boxed().compat(TokioDefaultSpawner);

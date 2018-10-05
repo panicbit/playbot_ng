@@ -11,3 +11,4 @@ playbot_ng = { path = ".." }
 failure = "0.1.2"
 futures-preview = { version = "0.3.0-alpha.3", features = ["tokio-compat"] }
 tokio = "0.1.8"
+rustyline = "2.1.0"

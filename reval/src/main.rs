@@ -55,6 +55,8 @@ fn main() {
         let message = CliMessage::new(input);
         let fut = playbot.handle_message(message).boxed().compat(TokioDefaultSpawner);
 
-        tokio::runtime::current_thread::block_on_all(fut).unwrap();
+        if let Err(e) = tokio::runtime::current_thread::block_on_all(fut) {
+            println!("ERROR: {}", e);
+        }
     }
 }

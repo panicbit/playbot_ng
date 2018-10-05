@@ -1,4 +1,5 @@
 # Playbot NG (eval)
+[![build status](https://travis-ci.com/panicbit/playbot_ng.svg?branch=master)](https://travis-ci.com/panicbit/playbot_ng)
 
 Playbot NG is a drop-in replacement for the retired IRC bot named playbot.
 There's an instance of Playbot NG named **eval** running on

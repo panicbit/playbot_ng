@@ -19,6 +19,7 @@ lazy_static = "1.1.0"
 playground = { path = "playground" }
 cratesio = { path = "cratesio" }
 futures-preview = "0.3.0-alpha.5"
+syn = { version = "0.15.8", features = ["full", "parsing"], default-features = false }
 
 [workspace]
 members = [

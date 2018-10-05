@@ -1,5 +1,5 @@
 use crate::module::prelude::*;
-use playground::{self, ExecuteRequest, Channel, Mode};
+use playground::{self, ExecuteRequest, Channel, Mode, CrateType};
 use regex::Regex;
 use futures::future::LocalFutureObj;
 use futures::prelude::*;
@@ -27,6 +27,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
         let mut show_version = false;
         let mut bare = false;
         let mut mode = Mode::Debug;
+        let mut crate_type = CrateType::Bin;
 
         // Parse flags
         loop {
@@ -41,6 +42,8 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                 "--bare" | "--mini" => bare = true,
                 "--debug" => mode = Mode::Debug,
                 "--release" => mode = Mode::Release,
+                "--bin" => crate_type = CrateType::Bin,
+                "--lib" => crate_type = CrateType::Lib,
                 "help" | "h" | "-h" | "-help" | "--help" | "--h" => {
                     super::help::display_help(ctx);
                     return Flow::Break;

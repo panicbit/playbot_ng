@@ -74,6 +74,10 @@ impl<'a> Request<'a> {
         &self.code
     }
 
+    pub fn set_code(&mut self, code: impl Into<Cow<'a, str>>) {
+        self.code = code.into();
+    }
+
     pub fn channel(&self) -> Channel {
         self.channel
     }

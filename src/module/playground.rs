@@ -22,12 +22,10 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
             return Flow::Continue;
         }
 
+        let mut request = ExecuteRequest::new("");
         let mut body = ctx.body();
-        let mut channel = Channel::Stable;
         let mut show_version = false;
         let mut bare = false;
-        let mut mode = Mode::Debug;
-        let mut edition = None;
 
         // Parse flags
         loop {
@@ -35,15 +33,15 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
             let flag = body.split_whitespace().next();
 
             match flag {
-                Some("--stable") => channel = Channel::Stable,
-                Some("--beta") => channel = Channel::Beta,
-                Some("--nightly") => channel = Channel::Nightly,
+                Some("--stable") => request.set_channel(Channel::Stable),
+                Some("--beta") => request.set_channel(Channel::Beta),
+                Some("--nightly") => request.set_channel(Channel::Nightly),
                 Some("--version") | Some("VERSION") => show_version = true,
                 Some("--bare") | Some("--mini") => bare = true,
-                Some("--debug") => mode = Mode::Debug,
-                Some("--release") => mode = Mode::Release,
-                Some("--2015") => edition = Some("2015".to_owned()),
-                Some("--2018") => edition = Some("2018".to_owned()),
+                Some("--debug") => request.set_mode(Mode::Debug),
+                Some("--release") => request.set_mode(Mode::Release),
+                Some("--2015") => request.set_edition(Some("2015".to_owned())),
+                Some("--2018") => request.set_edition(Some("2018".to_owned())),
                 Some("help") | Some("h") | Some("-h") | Some("-help") | Some("--help") | Some("--h") => {
                     super::help::display_help(ctx);
                     return Flow::Break;
@@ -58,7 +56,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
         }
 
         if show_version {
-            await!(print_version(channel, &ctx));
+            await!(print_version(request.channel(), &ctx));
             return Flow::Break;
         }
 
@@ -75,7 +73,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
             )
         };
 
-        let request = ExecuteRequest::new_with(&code, channel, mode, edition);
+        request.set_code(code);
 
         await!(execute(&ctx, &request));
 

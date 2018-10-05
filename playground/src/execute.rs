@@ -58,6 +58,18 @@ impl<'a> Request<'a> {
         }
     }
 
+    pub fn new_with<S: Into<Cow<'a, str>>>(code: S, channel: Channel, mode: Mode, edition: Option<String>) -> Self {
+        Self {
+            code: code.into(),
+            channel,
+            crate_type: CrateType::Bin,
+            mode,
+            edition,
+            backtrace: false,
+            tests: false,
+        }
+    }
+
     pub fn code(&self) -> &str {
         &self.code
     }

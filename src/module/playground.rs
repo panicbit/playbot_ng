@@ -67,18 +67,15 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                 .map(|attr| attr.as_str())
                 .unwrap_or("");
 
-            body = &body[crate_attrs.len()..];
+            let body_code = &body[crate_attrs.len()..];
 
             format!(include_str!("../../template.rs"),
                 crate_attrs = crate_attrs,
-                code = body,
+                code = body_code,
             )
         };
 
-        let mut request = ExecuteRequest::new(code.as_str());
-        request.set_channel(channel);
-        request.set_mode(mode);
-        request.set_edition(edition);
+        let request = ExecuteRequest::new_with(&code, channel,mode, edition);
 
         await!(execute(&ctx, &request));
 

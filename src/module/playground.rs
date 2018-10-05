@@ -143,7 +143,7 @@ pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future
         }
 
         if lines_count == 0 && resp.success {
-            println!("~~~ Code compiled successfully without output.");
+            ctx.reply("~~~ Code compiled successfully without output.");
         }
 
         if lines_count > take_count {

@@ -14,5 +14,5 @@ env:
     - RUST_BACKTRACE=1
 
 script:
-  - cargo build --verbose
+  - cargo build --all --verbose
   - cargo test -- --nocapture

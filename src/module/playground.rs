@@ -155,11 +155,10 @@ pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future
                 !line.trim().starts_with("Compiling")
                 && !line.trim().starts_with("Finished")
                 && !line.trim().starts_with("Running")
-            })
-            .take(take_count);
+            });
         let lines_count = lines.clone().count();
 
-        for line in lines {
+        for line in lines.take(take_count) {
             ctx.reply(line);
         }
 
@@ -167,6 +166,7 @@ pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future
             ctx.reply("~~~ Code compiled successfully without output.");
         }
 
+        println!("{} > {}", lines_count, take_count);
         if lines_count > take_count {
             let code = format!(include_str!("../../paste_template.rs"),
                 code = request.code(),

@@ -166,7 +166,6 @@ pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future
             ctx.reply("~~~ Code compiled successfully without output.");
         }
 
-        println!("{} > {}", lines_count, take_count);
         if lines_count > take_count {
             let code = format!(include_str!("../../paste_template.rs"),
                 code = request.code(),

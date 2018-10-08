@@ -144,7 +144,7 @@ pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) -> impl Future
         };
 
         let output = if resp.success { &resp.stdout } else { &resp.stderr };
-        let take_count = if resp.success { 2 } else { 1 };
+        let take_count = if resp.success { 3 } else { 1 };
         let lines = output
             .lines()
             .filter(|line| {

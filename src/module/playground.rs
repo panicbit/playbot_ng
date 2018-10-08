@@ -24,6 +24,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
 
         let mut request = ExecuteRequest::new("");
         let mut body = ctx.body();
+        let mut bare = false;
 
         // Parse flags
         loop {
@@ -38,6 +39,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                     await!(print_version(request.channel(), &ctx));
                     return Flow::Break;
                 },
+                "--bare" | "--mini" => bare = true,
                 "--debug" => request.set_mode(Mode::Debug),
                 "--release" => request.set_mode(Mode::Release),
                 "--2015" => request.set_edition(Some("2015".to_owned())),
@@ -58,9 +60,9 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
 
         body = body.trim_left();
 
-        let main_ident = syn::parse_str::<syn::Ident>("main").unwrap();
-        let bare = match syn::parse_str::<syn::File>(body) {
-            Ok(syn::File { items, .. }) => {
+        if bare {
+            let main_ident = syn::parse_str::<syn::Ident>("main").unwrap();
+            if let Ok(syn::File { items, .. }) = syn::parse_str::<syn::File>(body) {
                 let main_exists = items.iter().any(|item| match item {
                     syn::Item::Fn(fun) => fun.ident == main_ident,
                     _ => false,
@@ -69,12 +71,8 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                 if !main_exists {
                     request.set_crate_type(CrateType::Lib);
                 }
-                true
-            },
-            Err(_) => {
-                false
-            },
-        };
+            };
+        }
 
         let code = if bare { body.to_string() } else {
             let crate_attrs = CRATE_ATTRS.find(body)

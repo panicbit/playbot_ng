@@ -16,6 +16,13 @@ impl Module for Playground {
     }
 }
 
+#[derive(PartialEq)]
+enum Template {
+    Expr,
+    Bare,
+    ExprAllocStats,
+}
+
 fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
     LocalFutureObj::new(async move {
         if !ctx.is_directly_addressed() {
@@ -24,7 +31,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
 
         let mut request = ExecuteRequest::new("");
         let mut body = ctx.body();
-        let mut bare = false;
+        let mut template = Template::Expr;
 
         // Parse flags
         loop {
@@ -39,7 +46,8 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
                     await!(print_version(request.channel(), &ctx));
                     return Flow::Break;
                 },
-                "--bare" | "--mini" => bare = true,
+                "--bare" | "--mini" => template = Template::Bare,
+                "--allocs" | "--alloc" | "--stats" | "--alloc-stats" => template = Template::ExprAllocStats,
                 "--debug" => request.set_mode(Mode::Debug),
                 "--release" => request.set_mode(Mode::Release),
                 "--2015" => request.set_edition(Some("2015".to_owned())),
@@ -60,7 +68,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
 
         body = body.trim_left();
 
-        if bare {
+        if template == Template::Bare {
             let main_ident = syn::parse_str::<syn::Ident>("main").unwrap();
             if let Ok(syn::File { items, .. }) = syn::parse_str::<syn::File>(body) {
                 let main_exists = items.iter().any(|item| match item {
@@ -74,17 +82,32 @@ fn playground_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
             };
         }
 
-        let code = if bare { body.to_string() } else {
-            let crate_attrs = CRATE_ATTRS.find(body)
-                .map(|attr| attr.as_str())
-                .unwrap_or("");
+        let code = match template {
+            Template::Bare => body.to_string(),
+            Template::Expr => {
+                let crate_attrs = CRATE_ATTRS.find(body)
+                    .map(|attr| attr.as_str())
+                    .unwrap_or("");
 
-            let body_code = &body[crate_attrs.len()..];
+                let body_code = &body[crate_attrs.len()..];
 
-            format!(include_str!("../../template.rs"),
-                crate_attrs = crate_attrs,
-                code = body_code,
-            )
+                format!(include_str!("../../template.rs"),
+                    crate_attrs = crate_attrs,
+                    code = body_code,
+                )
+            },
+            Template::ExprAllocStats => {
+                let crate_attrs = CRATE_ATTRS.find(body)
+                    .map(|attr| attr.as_str())
+                    .unwrap_or("");
+
+                let body_code = &body[crate_attrs.len()..];
+
+                format!(include_str!("../../alloc_stats_template.rs"),
+                    crate_attrs = crate_attrs,
+                    code = body_code,
+                )
+            },
         };
 
         request.set_code(code);

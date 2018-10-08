@@ -4,15 +4,12 @@
 fn main() {{
     __STAT_ALLOC.reset();
 
-    let value = {{
+    {{
         {code}
     }};
 
     __STAT_ALLOC.print_stats();
-    
-    println!("{{:?}}", value);
 }}
-
 
 // CODE BELOW IS ALLOC STAT BOILERPLATE
 

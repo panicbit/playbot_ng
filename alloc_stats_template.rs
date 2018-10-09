@@ -40,9 +40,12 @@ mod __stat_alloc {{
             let num_deallocs = self.num_deallocs.load(SeqCst);
             let bytes_allocd = self.bytes_allocd.load(SeqCst);
             let bytes_deallocd = self.bytes_deallocd.load(SeqCst);
-            println!("  #allocs: {{}},   allocated bytes: {{}}", num_allocs, bytes_allocd);
-            println!("#deallocs: {{}}, deallocated bytes: {{}}", num_deallocs, bytes_deallocd);
-            println!("lost bytes: {{}}", bytes_allocd as isize - bytes_deallocd as isize);
+            println!("#allocs {{}} ({{}} bytes) :: #deallocs {{}} ({{}} bytes) :: #lost: {{}} ({{}} bytes)",
+                num_allocs, bytes_allocd,
+                num_deallocs, bytes_deallocd,
+                num_allocs as isize - num_deallocs as isize,
+                bytes_allocd as isize - bytes_deallocd as isize,
+            );
         }}
         
         pub fn reset(&self) {{

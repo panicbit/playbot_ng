@@ -64,7 +64,7 @@ mod __stat_alloc {{
         }}
     
         unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {{
-            self.count_alloc(layout.size());
+            self.count_alloc(new_size);
             self.allocator.realloc(ptr, layout, new_size)
         }}
     }}

@@ -1,8 +1,7 @@
 use crate::Channel;
 use reqwest::{Client, Error};
 use reqwest::r#async as async_reqwest;
-use std::future::Future;
-use futures::compat::Future01CompatExt;
+use futures::prelude::*;
 
 pub fn version(client: &Client, channel: Channel) -> Result<Version, Error> {
     let resp = client
@@ -14,17 +13,15 @@ pub fn version(client: &Client, channel: Channel) -> Result<Version, Error> {
     Ok(resp)
 }
 
-pub fn async_version(channel: Channel) -> impl Future<Output = Result<Version, Error>> {
-    async move {
-        let client = async_reqwest::Client::new();
-        let url = format!("https://play.rust-lang.org/meta/version/{}", channel.as_str());
+pub fn async_version(channel: Channel) -> impl Future<Item = Version, Error = Error> {
+    let client = async_reqwest::Client::new();
+    let url = format!("https://play.rust-lang.org/meta/version/{}", channel.as_str());
 
-        let resp = await!(client.get(&url).send().compat())?;
-        let mut resp = resp.error_for_status()?;
-        let resp = await!(resp.json().compat())?;
-
-        Ok(resp)
-    }
+    client
+    .get(&url)
+    .send()
+    .and_then(|resp| resp.error_for_status())
+    .and_then(|mut resp| resp.json())
 }
 
 #[derive(Deserialize)]

@@ -1,11 +1,4 @@
-#![feature(futures_api)]
-#![feature(async_await)]
-#![feature(await_macro)]
-extern crate failure;
-extern crate reqwest;
 #[macro_use] extern crate serde_derive;
-
-use std::str;
 
 pub mod execute;
 pub use self::execute::{

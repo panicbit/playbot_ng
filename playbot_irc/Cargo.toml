@@ -7,9 +7,9 @@ edition = "2018"
 [dependencies]
 playbot_ng = { path = ".." }
 irc = { version = "0.13.5", git = "https://github.com/aatxe/irc", branch = "0.14" }
-futures-preview = { version = "0.3.0-alpha.3", features = ["tokio-compat"] }
+futures-preview = { version = "0.3.0-alpha.9", features = ["tokio-compat"] }
 chrono = "0.4.6"
 failure = "0.1.2"
-toml = "0.4.6"
-serde = "1.0.75"
-serde_derive = "1.0.75"
+toml = "0.4.8"
+serde = "1.0.80"
+serde_derive = "1.0.80"

@@ -3,7 +3,6 @@ use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 use itertools::Itertools;
 use reqwest::StatusCode;
-use futures::prelude::*;
 
 pub(crate) enum CrateInfo {}
 

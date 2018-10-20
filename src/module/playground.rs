@@ -2,7 +2,6 @@ use crate::module::prelude::*;
 use playground::{self, ExecuteRequest, Channel, Mode, CrateType};
 use regex::Regex;
 use reqwest::Client;
-use futures::prelude::*;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();

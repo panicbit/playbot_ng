@@ -2,7 +2,6 @@ use crate::module::prelude::*;
 use regex::Regex;
 use itertools::Itertools;
 use std::iter::once;
-use futures::prelude::*;
 
 lazy_static! {
     static ref SCRIPT: Vec<(Regex, fn(&str) -> String)> = vec![

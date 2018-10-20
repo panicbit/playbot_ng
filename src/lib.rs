@@ -41,12 +41,8 @@ impl Playbot {
         }
     }
 
-    pub fn handle_message<'a, M: Message + 'a>(&self, message: M) -> impl Future<Output = Result<(), Error>> + 'a {
-        let commands = self.commands.clone();
-
-        async move {
-            await!(commands.handle_message(&message))
-        }
+    pub fn handle_message<'a, M: Message + 'a>(&self, message: M) {
+        self.commands.clone().handle_message(&message);
     }
 }
 

@@ -2,7 +2,6 @@ use crate::module::prelude::*;
 use regex::Regex;
 use itertools::Itertools;
 use std::iter::once;
-use futures::future::LocalFutureObj;
 use futures::prelude::*;
 
 lazy_static! {
@@ -49,28 +48,26 @@ impl Module for Egg {
     }
 }
 
-fn egg_handler<'a>(ctx: &'a Context) -> LocalFutureObj<'a, Flow> {
-    LocalFutureObj::new(async move {
-        for dialog in &*SCRIPT {
-            if let Some(caps) = dialog.0.captures(ctx.body()) {
-                if let Some(nick) = caps.name("nick") {
-                    if nick.as_str() != ctx.current_nickname().as_str() {
-                        return Flow::Break;
-                    }
+fn egg_handler<'a>(ctx: &'a Context) -> Flow {
+    for dialog in &*SCRIPT {
+        if let Some(caps) = dialog.0.captures(ctx.body()) {
+            if let Some(nick) = caps.name("nick") {
+                if nick.as_str() != ctx.current_nickname().as_str() {
+                    return Flow::Break;
                 }
-
-                let reply = (dialog.1)(ctx.source_nickname());
-
-                if !reply.is_empty() {
-                    ctx.reply(&reply);
-                }
-
-                return Flow::Break;
             }
-        }
 
-        Flow::Continue
-    }.boxed())
+            let reply = (dialog.1)(ctx.source_nickname());
+
+            if !reply.is_empty() {
+                ctx.reply(&reply);
+            }
+
+            return Flow::Break;
+        }
+    }
+
+    Flow::Continue
 }
 
 fn re(re: &str) -> Regex {

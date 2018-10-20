@@ -3,14 +3,13 @@ use std::collections::HashMap;
 use super::{Context, Flow, Command};
 use std::iter;
 use std::sync::Arc;
-use futures::future::LocalFutureObj;
-use std::future::Future;
+use futures::prelude::*;
 use crate::Message;
 
 pub(crate) struct CommandRegistry {
     command_prefix: String,
-    named_handlers: HashMap<String, Box<for<'a> Fn(&'a Context, &'a [&str]) -> LocalFutureObj<'a, Flow>>>,
-    fallback_handlers: Vec<Box<for<'a> Fn(&'a Context) -> LocalFutureObj<'a, Flow>>>,
+    named_handlers: HashMap<String, Box<Fn(&Context, &[&str]) -> Flow>>,
+    fallback_handlers: Vec<Box<Fn(&Context) -> Flow>>,
 }
 
 impl CommandRegistry {
@@ -25,14 +24,14 @@ impl CommandRegistry {
     pub fn set_named_handler(
         &mut self,
         name: impl Into<String>,
-        handler: impl for<'a> Fn(&'a Context, &'a [&str]) -> LocalFutureObj<'a, Flow> + 'static,
+        handler: impl Fn(&Context, &[&str]) -> Flow + 'static,
     ) {
-        self.named_handlers.insert(name.into(), Box::new(handler));  
+        self.named_handlers.insert(name.into(), Box::new(handler));
     }
 
     pub fn add_fallback_handler(
         &mut self,
-        handler: impl for<'a> Fn(&'a Context) -> LocalFutureObj<'a, Flow> + 'static,
+        handler: impl Fn(&Context) -> Flow + 'static,
     ) {
         self.fallback_handlers.push(Box::new(handler));
     }
@@ -41,46 +40,55 @@ impl CommandRegistry {
         Arc::new(self)
     }
 
-    pub fn handle_message<'a>(self: Arc<Self>, message: &'a Message) -> impl Future<Output = Result<(), Error>> + 'a {
-        async move {
-            let context = match Context::new(message) {
-                Some(context) => context,
-                None => return Ok(()),
-            };
+    pub fn handle_message(self: Arc<Self>, message: &Message) {
+        let context = match Context::new(message) {
+            Some(context) => context,
+            None => return,
+        };
 
-            // Handle the main context first
+        if self.execute_commands(&context) == Flow::Break {
+            return;
+        }
+
+        if self.execute_inline_commands(&context) == Flow::Break {
+            return;
+        }
+
+        self.handle_fallback(&context);
+    }
+
+    fn execute_commands(&self, context: &Context) -> Flow {
+        if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
+            if let Some(handler) = self.named_handlers.get(command.name()) {
+                return handler(&context, command.args());
+            }
+        }
+        
+        Flow::Continue
+    }
+
+    fn execute_inline_commands(&self, context: &Context) -> Flow {
+        let mut flow = Flow::Continue;
+        let contexts = iter::once(context.clone()).chain(context.inline_contexts());
+
+        for context in contexts.take(3) {
             if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
                 if let Some(handler) = self.named_handlers.get(command.name()) {
-                    if await!(handler(&context, command.args())) == Flow::Break {
-                        return Ok(());
+                    if handler(&context, command.args()) == Flow::Break {
+                        flow = Flow::Break;
                     }
                 }
             }
+        }
 
-            // Then handle ALL inline contexts before deciding flow
-            let contexts = iter::once(context.clone()).chain(context.inline_contexts());
-            let mut any_inline_command_succeded = false;
-            for context in contexts.take(3) {
-                if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
-                    if let Some(handler) = self.named_handlers.get(command.name()) {
-                        if await!(handler(&context, command.args())) == Flow::Break {
-                            any_inline_command_succeded = true;
-                        }
-                    }
-                }
+        flow
+    }
+
+    fn handle_fallback(&self, context: &Context) {
+        for handler in &self.fallback_handlers {
+            if handler(&context) == Flow::Break {
+                return;
             }
-
-            if any_inline_command_succeded {
-                return Ok(());
-            }
-
-            for handler in &self.fallback_handlers {
-                if await!(handler(&context)) == Flow::Break {
-                    return Ok(());
-                }
-            }
-
-            Ok(())
         }
     }
 }

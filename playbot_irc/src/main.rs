@@ -1,5 +1,3 @@
-#![feature(async_await)]
-#![feature(await_macro)]
 #[macro_use] extern crate serde_derive;
 
 use std::thread;
@@ -9,8 +7,6 @@ use chrono::{
     Duration,
 };
 use irc::client::prelude::{*, Config as IrcConfig};
-use futures::prelude::*;
-use futures::compat::TokioDefaultSpawner;
 use failure::Error;
 use playbot::{Playbot, Message};
 
@@ -65,7 +61,6 @@ pub fn run_instance(config: IrcConfig) {
 pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
     let mut reactor = IrcReactor::new()?;
-    let handle = reactor.inner_handle().clone();
     let client = reactor.prepare_client_and_connect(config)?;
     let playbot = Arc::new(Playbot::new());
 
@@ -76,27 +71,12 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
         let playbot = playbot.clone();
         let client = client.clone();
 
-        handle.spawn({
-            async move {
-                let message = match IrcMessage::new(&client, &message) {
-                    Some(message) => message,
-                    None => return Ok(()),
-                };
+        let message = match IrcMessage::new(&client, &message) {
+            Some(message) => message,
+            None => return Ok(()),
+        };
 
-                match await!(playbot.handle_message(message)) {
-                    Ok(_) => {},
-                    Err(e) => {
-                        eprintln!("[ERR] {}", e);
-
-                        for cause in e.iter_chain() {
-                            eprintln!("[CAUSE]: {}", cause);
-                        }
-                    },
-                };
-
-                Ok(())
-            }
-        }.boxed().compat(TokioDefaultSpawner));
+        playbot.handle_message(message);
 
         Ok(())
     });
@@ -114,7 +94,7 @@ pub struct IrcMessage<'a> {
     body: &'a str,
     is_directly_addressed: bool,
     reply_fn: SendFn,
-    source: &'a str,
+    source: &'a Prefix,
     source_nickname: &'a str,
     target: &'a str,
     client: &'a IrcClient,
@@ -142,7 +122,7 @@ impl<'a> IrcMessage<'a> {
             }
         }
 
-        let source = message.prefix.as_ref().map(<_>::as_ref)?;
+        let source = message.prefix.as_ref()?;
 
         let target = match message.response_target() {
             Some(target) => target,

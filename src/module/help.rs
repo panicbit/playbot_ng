@@ -1,6 +1,4 @@
 use crate::module::prelude::*;
-use futures::prelude::*;
-use futures::future::LocalFutureObj;
 
 pub(crate) enum Help {}
 
@@ -10,11 +8,9 @@ impl Module for Help {
     }
 }
 
-fn help_handler<'a>(ctx: &'a Context, _args: &'a [&str]) -> LocalFutureObj<'a, Flow> {
-    LocalFutureObj::new(async move {
-        display_help(ctx);
-        Flow::Break
-    }.boxed())
+fn help_handler(ctx: &Context, _args: &[&str]) -> Flow {
+    display_help(ctx);
+    Flow::Break
 }
 
 pub(crate) fn display_help(ctx: &Context) {

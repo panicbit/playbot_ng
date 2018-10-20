@@ -1,8 +1,6 @@
 use playbot::{Playbot, Message};
 use failure::Error;
 use std::sync::Arc;
-use futures::prelude::*;
-use futures::compat::TokioDefaultSpawner;
 use rustyline::error::ReadlineError;
 
 struct CliMessage {
@@ -56,10 +54,6 @@ fn main() {
         rl.add_history_entry(input.as_str());
 
         let message = CliMessage::new(input);
-        let fut = playbot.handle_message(message).boxed().compat(TokioDefaultSpawner);
-
-        if let Err(e) = tokio::runtime::current_thread::block_on_all(fut) {
-            println!("ERROR: {}", e);
-        }
+        playbot.handle_message(message);
     }
 }

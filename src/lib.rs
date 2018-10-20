@@ -38,9 +38,3 @@ impl Playbot {
         self.commands.clone().handle_message(&message);
     }
 }
-
-#[derive(PartialEq, Eq)]
-pub(crate) enum Flow {
-    Break,
-    Continue,
-}

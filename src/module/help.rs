@@ -8,9 +8,8 @@ impl Module for Help {
     }
 }
 
-fn help_handler(ctx: &Context, _args: &[&str]) -> Flow {
+fn help_handler(ctx: &Context, _args: &[&str]) {
     display_help(ctx);
-    Flow::Break
 }
 
 pub(crate) fn display_help(ctx: &Context) {

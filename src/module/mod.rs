@@ -14,11 +14,7 @@ pub(crate) mod help;
 pub(crate) use self::help::Help;
 
 mod prelude {
-    pub(crate) use crate::{
-        Context,
-        Flow,
-        CommandRegistry,
-    };
+    pub(crate) use crate::{Context, CommandRegistry};
     pub(crate) use super::Module;
 }
 

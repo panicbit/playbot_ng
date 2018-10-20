@@ -48,12 +48,12 @@ impl Module for Egg {
     }
 }
 
-fn egg_handler<'a>(ctx: &'a Context) -> Flow {
+fn egg_handler<'a>(ctx: &'a Context) {
     for dialog in &*SCRIPT {
         if let Some(caps) = dialog.0.captures(ctx.body()) {
             if let Some(nick) = caps.name("nick") {
                 if nick.as_str() != ctx.current_nickname().as_str() {
-                    return Flow::Break;
+                    return;
                 }
             }
 
@@ -63,11 +63,9 @@ fn egg_handler<'a>(ctx: &'a Context) -> Flow {
                 ctx.reply(&reply);
             }
 
-            return Flow::Break;
+            return;
         }
     }
-
-    Flow::Continue
 }
 
 fn re(re: &str) -> Regex {

@@ -13,10 +13,10 @@ impl Module for CrateInfo {
     }
 }
 
-fn crate_handler(ctx: &Context, args: &[&str]) -> Flow {
+fn crate_handler(ctx: &Context, args: &[&str]) {
     let crate_name = match args.get(0) {
         Some(name) => name,
-        None => return Flow::Continue,
+        None => return,
     };
 
     let info = match cratesio::crate_info(crate_name) {
@@ -24,12 +24,12 @@ fn crate_handler(ctx: &Context, args: &[&str]) -> Flow {
         // TODO: Use proper error types
         Err(ref err) if err.status() == Some(StatusCode::NOT_FOUND) => {
             ctx.reply(format!("Crate '{}' does not exist.", crate_name));
-            return Flow::Break
+            return
         },
         Err(err) => {
             eprintln!("Error getting crate info for '{}': {:?}", crate_name, err);
             ctx.reply(format!("Failed to get crate info for {}", crate_name));
-            return Flow::Break
+            return
         }
     };
 
@@ -43,6 +43,4 @@ fn crate_handler(ctx: &Context, args: &[&str]) -> Flow {
     );
 
     ctx.reply(output);
-
-    Flow::Break
 }

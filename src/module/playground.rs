@@ -23,9 +23,9 @@ enum Template {
     ExprAllocStats,
 }
 
-fn playground_handler<'a>(ctx: &'a Context) -> Flow {
+fn playground_handler<'a>(ctx: &'a Context) {
     if !ctx.is_directly_addressed() {
-        return Flow::Continue;
+        return;
     }
 
     let mut request = ExecuteRequest::new("");
@@ -43,7 +43,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> Flow {
             "--nightly" => request.set_channel(Channel::Nightly),
             "--version" | "VERSION" => {
                 print_version(request.channel(), &ctx);
-                return Flow::Break;
+                return;
             },
             "--bare" | "--mini" => template = Template::Bare,
             "--allocs" | "--alloc" | "--stats" | "--alloc-stats" => template = Template::ExprAllocStats,
@@ -53,7 +53,7 @@ fn playground_handler<'a>(ctx: &'a Context) -> Flow {
             "--2018" => request.set_edition(Some("2018".to_owned())),
             "help" | "h" | "-h" | "-help" | "--help" | "--h" => {
                 super::help::display_help(ctx);
-                return Flow::Break;
+                return;
             },
             "--" => {
                 body = &body[flag.len()..];
@@ -111,8 +111,6 @@ fn playground_handler<'a>(ctx: &'a Context) -> Flow {
 
     request.set_code(code);
     execute(&ctx, &request);
-
-    Flow::Break
 }
 
 fn print_version<'a>(channel: Channel, ctx: &'a Context) {

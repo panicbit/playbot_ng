@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use super::{Context, Flow, Command};
+use super::{Context, Command};
 use std::iter;
 use crate::Message;
 
 pub(crate) struct CommandRegistry {
     command_prefix: String,
-    named_handlers: HashMap<String, Box<Fn(&Context, &[&str]) -> Flow>>,
-    fallback_handlers: Vec<Box<Fn(&Context) -> Flow>>,
+    named_handlers: HashMap<String, Box<Fn(&Context, &[&str])>>,
+    fallback_handlers: Vec<Box<Fn(&Context)>>,
 }
 
 impl CommandRegistry {
@@ -21,14 +21,14 @@ impl CommandRegistry {
     pub fn set_named_handler(
         &mut self,
         name: impl Into<String>,
-        handler: impl Fn(&Context, &[&str]) -> Flow + 'static,
+        handler: impl Fn(&Context, &[&str]) + 'static,
     ) {
         self.named_handlers.insert(name.into(), Box::new(handler));
     }
 
     pub fn add_fallback_handler(
         &mut self,
-        handler: impl Fn(&Context) -> Flow + 'static,
+        handler: impl Fn(&Context) + 'static,
     ) {
         self.fallback_handlers.push(Box::new(handler));
     }
@@ -39,49 +39,47 @@ impl CommandRegistry {
             None => return,
         };
 
-        if self.execute_commands(&context) == Flow::Break {
+        if self.execute_commands(&context) {
             return;
         }
 
-        if self.execute_inline_commands(&context) == Flow::Break {
+        if self.execute_inline_commands(&context) {
             return;
         }
 
-        self.handle_fallback(&context);
+        self.execute_fallback_handlers(&context);
     }
 
-    fn execute_commands(&self, context: &Context) -> Flow {
+    fn execute_commands(&self, context: &Context) -> bool {
         if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
             if let Some(handler) = self.named_handlers.get(command.name()) {
-                return handler(&context, command.args());
+                handler(&context, command.args());
+                return true;
             }
         }
-        
-        Flow::Continue
+
+        false
     }
 
-    fn execute_inline_commands(&self, context: &Context) -> Flow {
-        let mut flow = Flow::Continue;
+    fn execute_inline_commands(&self, context: &Context) -> bool {
+        let mut some_command_executed = false;
         let contexts = iter::once(context.clone()).chain(context.inline_contexts());
 
         for context in contexts.take(3) {
             if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
                 if let Some(handler) = self.named_handlers.get(command.name()) {
-                    if handler(&context, command.args()) == Flow::Break {
-                        flow = Flow::Break;
-                    }
+                    handler(&context, command.args());
+                    some_command_executed = true;
                 }
             }
         }
 
-        flow
+        some_command_executed
     }
 
-    fn handle_fallback(&self, context: &Context) {
+    fn execute_fallback_handlers(&self, context: &Context) {
         for handler in &self.fallback_handlers {
-            if handler(&context) == Flow::Break {
-                return;
-            }
+            handler(&context);
         }
     }
 }

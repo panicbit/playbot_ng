@@ -36,11 +36,7 @@ impl CommandRegistry {
         self.fallback_handlers.push(Box::new(handler));
     }
 
-    pub fn into_arc(self) -> Arc<Self> {
-        Arc::new(self)
-    }
-
-    pub fn handle_message(self: Arc<Self>, message: &Message) {
+    pub fn handle_message(&self, message: &Message) {
         let context = match Context::new(message) {
             Some(context) => context,
             None => return,

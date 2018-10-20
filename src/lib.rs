@@ -1,8 +1,6 @@
 #[macro_use] extern crate lazy_static;
 
 use std::sync::Arc;
-use futures::prelude::*;
-use failure::Error;
 use self::{
     context::Context,
     command::Command,

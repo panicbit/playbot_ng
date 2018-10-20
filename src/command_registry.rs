@@ -1,9 +1,6 @@
-use failure::Error;
 use std::collections::HashMap;
 use super::{Context, Flow, Command};
 use std::iter;
-use std::sync::Arc;
-use futures::prelude::*;
 use crate::Message;
 
 pub(crate) struct CommandRegistry {

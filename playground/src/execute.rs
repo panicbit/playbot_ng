@@ -47,7 +47,7 @@ impl<'a> Request<'a> {
             channel: Channel::Stable,
             crate_type: CrateType::Bin,
             mode: Mode::Debug,
-            edition: None,
+            edition: Some("2018".into()),
             backtrace: false,
             tests: false,
         }

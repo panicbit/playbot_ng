@@ -1,4 +1,5 @@
 use crate::module::prelude::*;
+use crate::Command;
 use cratesio;
 use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 use itertools::Itertools;
@@ -12,8 +13,8 @@ impl Module for CrateInfo {
     }
 }
 
-fn crate_handler(ctx: &Context, args: &[&str]) {
-    let crate_name = match args.get(0) {
+fn crate_handler(ctx: &Context, cmd: &Command) {
+    let crate_name = match cmd.args().get(0) {
         Some(name) => name,
         None => return,
     };

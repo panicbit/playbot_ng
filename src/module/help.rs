@@ -1,4 +1,5 @@
 use crate::module::prelude::*;
+use crate::Command;
 
 pub(crate) enum Help {}
 
@@ -8,7 +9,7 @@ impl Module for Help {
     }
 }
 
-fn help_handler(ctx: &Context, _args: &[&str]) {
+fn help_handler(ctx: &Context, _args: &Command) {
     display_help(ctx);
 }
 

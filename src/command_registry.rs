@@ -5,7 +5,7 @@ use crate::Message;
 
 pub(crate) struct CommandRegistry {
     command_prefix: String,
-    named_handlers: HashMap<String, Box<Fn(&Context, &[&str])>>,
+    named_handlers: HashMap<String, Box<Fn(&Context, &Command)>>,
     fallback_handlers: Vec<Box<Fn(&Context)>>,
 }
 
@@ -21,7 +21,7 @@ impl CommandRegistry {
     pub fn set_named_handler(
         &mut self,
         name: impl Into<String>,
-        handler: impl Fn(&Context, &[&str]) + 'static,
+        handler: impl Fn(&Context, &Command) + 'static,
     ) {
         self.named_handlers.insert(name.into(), Box::new(handler));
     }
@@ -53,7 +53,7 @@ impl CommandRegistry {
     fn execute_commands(&self, context: &Context) -> bool {
         if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
             if let Some(handler) = self.named_handlers.get(command.name()) {
-                handler(&context, command.args());
+                handler(&context, &command);
                 return true;
             }
         }
@@ -68,7 +68,7 @@ impl CommandRegistry {
         for context in contexts.take(3) {
             if let Some(command) = Command::parse(&self.command_prefix, context.body()) {
                 if let Some(handler) = self.named_handlers.get(command.name()) {
-                    handler(&context, command.args());
+                    handler(&context, &command);
                     some_command_executed = true;
                 }
             }

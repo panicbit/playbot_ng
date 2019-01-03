@@ -1,4 +1,5 @@
 use crate::module::prelude::*;
+use crate::Command;
 use playground::{self, ExecuteRequest, Channel, Mode, CrateType};
 use regex::Regex;
 use reqwest::Client;
@@ -11,7 +12,8 @@ pub(crate) enum Playground {}
 
 impl Module for Playground {
     fn init(commands: &mut CommandRegistry) {
-        commands.add_fallback_handler(playground_handler);
+        commands.add_fallback_handler(playground_fallback_handler);
+        commands.set_named_handler("eval", playground_named_handler);
     }
 }
 
@@ -22,13 +24,20 @@ enum Template {
     ExprAllocStats,
 }
 
-fn playground_handler<'a>(ctx: &'a Context) {
+fn playground_fallback_handler(ctx: &Context) {
     if !ctx.is_directly_addressed() {
         return;
     }
 
+    execute_code(ctx, ctx.body());
+}
+
+fn playground_named_handler(ctx: &Context, cmd: &Command) {
+    execute_code(&ctx, cmd.raw_args());
+}
+
+fn execute_code(ctx: &Context, mut body: &str) {
     let mut request = ExecuteRequest::new("");
-    let mut body = ctx.body();
     let mut template = Template::Expr;
 
     // Parse flags

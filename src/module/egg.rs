@@ -35,6 +35,17 @@ lazy_static! {
                 "rustbot" | "[o__o]" => format!("Thank you {}!", name),
                 _ => String::new(),
             }
+        ),
+        (
+            re(r"\?hey (?P<nick>[[:word:]]+)"),
+            |name| match name {
+                "rustbot" => format!("hey j and rink"),
+                _ => String::new(),
+            }
+        ),
+        (
+            re(r"\?botchain"),
+            |_| format!("hey j and rink"),
         )
     ];
 }

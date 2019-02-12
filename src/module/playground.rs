@@ -76,15 +76,20 @@ fn execute_code(ctx: &Context, mut body: &str) {
     body = body.trim_left();
 
     if template == Template::Bare {
-        let main_ident = syn::parse_str::<syn::Ident>("main").unwrap();
-        if let Ok(syn::File { items, .. }) = syn::parse_str::<syn::File>(body) {
-            let main_exists = items.iter().any(|item| match item {
-                syn::Item::Fn(fun) => fun.ident == main_ident,
-                _ => false,
-            });
+        if let Ok(syn::File { attrs, .. }) = syn::parse_str::<syn::File>(body) {
+            for attr in attrs {
+                match attr.parse_meta().unwrap() {
+                    syn::Meta::NameValue(syn::MetaNameValue { ident, lit: syn::Lit::Str(lit_str), .. }) => {
+                        if ident != "crate_type" { continue; }
 
-            if !main_exists {
-                request.set_crate_type(CrateType::Lib);
+                        match lit_str.value().as_str() {
+                            "bin" => request.set_crate_type(CrateType::Bin),
+                            "lib" => request.set_crate_type(CrateType::Lib),
+                            _ => (),
+                        }
+                    },
+                    _ => (),
+                }
             }
         };
     }

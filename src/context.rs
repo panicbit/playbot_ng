@@ -55,6 +55,6 @@ impl<'a> Context<'a> {
                 .. self.clone()
             });
         
-        Box::new(contexts)
+        contexts
     }
 }

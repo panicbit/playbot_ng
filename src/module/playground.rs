@@ -76,7 +76,7 @@ fn execute_code(ctx: &Context, mut body: &str) {
     body = body.trim_start();
 
     if template == Template::Bare {
-        if let Ok(syn::File { items, .. }) = syn::parse_str::<syn::File>(body) {
+        if let Ok(syn::File { attrs, items, .. }) = syn::parse_str::<syn::File>(body) {
             let main_exists = items.iter().any(|item| match item {
                 syn::Item::Fn(fun) => fun.ident == "main",
                 _ => false,
@@ -84,6 +84,21 @@ fn execute_code(ctx: &Context, mut body: &str) {
 
             if !main_exists {
                 request.set_crate_type(CrateType::Lib);
+            }
+
+            for attr in attrs {
+                match attr.parse_meta().unwrap() {
+                    syn::Meta::NameValue(syn::MetaNameValue { ident, lit: syn::Lit::Str(lit_str), .. }) => {
+                        if ident != "crate_type" { continue; }
+
+                        match lit_str.value().as_str() {
+                            "bin" => request.set_crate_type(CrateType::Bin),
+                            "lib" => request.set_crate_type(CrateType::Lib),
+                            _ => (),
+                        }
+                    },
+                    _ => (),
+                }
             }
         };
     }

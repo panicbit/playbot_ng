@@ -76,10 +76,9 @@ fn execute_code(ctx: &Context, mut body: &str) {
     body = body.trim_left();
 
     if template == Template::Bare {
-        let main_ident = syn::parse_str::<syn::Ident>("main").unwrap();
         if let Ok(syn::File { items, .. }) = syn::parse_str::<syn::File>(body) {
             let main_exists = items.iter().any(|item| match item {
-                syn::Item::Fn(fun) => fun.ident == main_ident,
+                syn::Item::Fn(fun) => fun.ident == "main",
                 _ => false,
             });
 

@@ -42,7 +42,7 @@ fn execute_code(ctx: &Context, mut body: &str) {
 
     // Parse flags
     loop {
-        body = body.trim_left();
+        body = body.trim_start();
         let flag = body.split_whitespace().next().unwrap_or("");
 
         match flag {
@@ -73,7 +73,7 @@ fn execute_code(ctx: &Context, mut body: &str) {
         body = &body[flag.len()..];
     }
 
-    body = body.trim_left();
+    body = body.trim_start();
 
     if template == Template::Bare {
         if let Ok(syn::File { items, .. }) = syn::parse_str::<syn::File>(body) {

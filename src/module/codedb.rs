@@ -29,7 +29,7 @@ impl<'a> Module for CodeDB<'a> {
             overwrite = true;
             body = &body[1..];
         }
-        body = body.trim_left();
+        body = body.trim_start();
 
         // Check if we are defining a fn
         if body.starts_with("fn") {

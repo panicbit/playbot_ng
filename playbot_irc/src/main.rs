@@ -134,11 +134,11 @@ impl<'a> IrcMessage<'a> {
 
         let is_directly_addressed = {
             if body.starts_with(current_nickname.as_str()) {
-                let new_body = body[current_nickname.len()..].trim_left();
+                let new_body = body[current_nickname.len()..].trim_start();
                 let has_separator = new_body.starts_with(":") || new_body.starts_with(",");
 
                 if has_separator {
-                    body = new_body[1..].trim_left();
+                    body = new_body[1..].trim_start();
                 }
 
                 has_separator

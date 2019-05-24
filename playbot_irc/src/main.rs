@@ -35,17 +35,18 @@ pub fn main() {
 
 pub fn run_instance(config: IrcConfig) {
     let sleep_dur = Duration::seconds(5).to_std().unwrap();
+    let server = config.server.as_ref().map(|x| &**x).unwrap_or("");
 
     loop {   
         println!("{} Starting up", Utc::now());
 
         match connect_and_handle(config.clone()) {
-            Ok(()) => eprintln!("[OK] Disconnected for an unknown reason"),
+            Ok(()) => eprintln!("{}/[OK] Disconnected for an unknown reason", server),
             Err(e) => {
-                eprintln!("[ERR] Disconnected");
+                eprintln!("[{}/ERR] Disconnected", server);
 
                 for cause in e.iter_chain() {
-                    eprintln!("[CAUSE] {}", cause);
+                    eprintln!("[{}/CAUSE] {}", server, cause);
                 }
             }
         }

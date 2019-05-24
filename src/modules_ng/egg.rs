@@ -1,4 +1,6 @@
-use crate::module::prelude::*;
+use actix::prelude::*;
+use crate::Message;
+use super::{PluginContext, OnMessage, Priority};
 use regex::Regex;
 use itertools::Itertools;
 use std::iter::once;
@@ -50,30 +52,41 @@ lazy_static! {
     ];
 }
 
-pub(crate) enum Egg {}
+pub struct Egg {}
 
-impl Module for Egg {
-    fn init(commands: &mut CommandRegistry) {
-        commands.add_fallback_handler(egg_handler);
+impl Egg {
+    pub fn new(ctx: PluginContext<Self>) -> Self {
+        ctx.on_message(Priority::NORMAL, ctx.recipient());
+        Self {}
     }
 }
 
-fn egg_handler<'a>(ctx: &'a Context) {
-    for dialog in &*SCRIPT {
-        if let Some(caps) = dialog.0.captures(ctx.body()) {
-            if let Some(nick) = caps.name("nick") {
-                if nick.as_str() != ctx.current_nickname().as_str() {
-                    return;
+impl Actor for Egg {
+    type Context = Context<Self>;
+}
+
+impl Handler<OnMessage> for Egg {
+    type Result = ();
+
+    fn handle(&mut self, event: OnMessage, ctx: &mut Context<Self>) {
+        let message = event.message;
+
+        for dialog in &*SCRIPT {
+            if let Some(caps) = dialog.0.captures(message.body()) {
+                if let Some(nick) = caps.name("nick") {
+                    if nick.as_str() != message.current_nickname().as_str() {
+                        return;
+                    }
                 }
+
+                let reply = (dialog.1)(message.source_nickname());
+
+                if !reply.is_empty() {
+                    message.reply(&reply);
+                }
+
+                return;
             }
-
-            let reply = (dialog.1)(ctx.source_nickname());
-
-            if !reply.is_empty() {
-                ctx.reply(&reply);
-            }
-
-            return;
         }
     }
 }

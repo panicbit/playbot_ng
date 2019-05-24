@@ -1,21 +1,52 @@
-use crate::module::prelude::*;
-use crate::Command;
-use playground::{self, ExecuteRequest, Channel, Mode, CrateType};
+use ::playground::{self, ExecuteRequest, Channel, Mode, CrateType};
 use regex::Regex;
 use reqwest::Client;
+use actix::prelude::*;
+use super::*;
+use crate::Message;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
 }
 
-pub(crate) enum Playground {}
+pub(crate) struct Playground {}
 
-impl Module for Playground {
-    fn init(commands: &mut CommandRegistry) {
-        commands.add_fallback_handler(playground_fallback_handler);
-        commands.set_named_handler("eval", playground_named_handler);
+impl Playground {
+    pub fn new(ctx: PluginContext<Self>) -> Self {
+        ctx.on_message(Priority::NORMAL, ctx.recipient());
+        ctx.on_command("eval", ctx.recipient());
+        Self {}
     }
 }
+
+impl Actor for Playground {
+    type Context = Context<Self>;
+}
+
+impl Handler<OnMessage> for Playground {
+    type Result = ();
+
+    fn handle(&mut self, event: OnMessage, ctx: &mut Context<Self>) {
+        if !event.message.is_directly_addressed() {
+            return;
+        }
+
+        execute_code(&*event.message, event.message.body());
+    }
+}
+
+impl Handler<OnCommand> for Playground {
+    type Result = ();
+
+    fn handle(&mut self, event: OnCommand, ctx: &mut Context<Self>) {
+        if event.command != "eval" {
+            return;
+        }
+
+        execute_code(&*event.message, &event.arg);
+    }
+}
+
 
 #[derive(PartialEq)]
 enum Template {
@@ -24,19 +55,7 @@ enum Template {
     ExprAllocStats,
 }
 
-fn playground_fallback_handler(ctx: &Context) {
-    if !ctx.is_directly_addressed() {
-        return;
-    }
-
-    execute_code(ctx, ctx.body());
-}
-
-fn playground_named_handler(ctx: &Context, cmd: &Command) {
-    execute_code(&ctx, cmd.raw_args());
-}
-
-fn execute_code(ctx: &Context, mut body: &str) {
+fn execute_code(message: &Message, mut body: &str) {
     let mut request = ExecuteRequest::new("");
     let mut template = Template::Expr;
 
@@ -50,7 +69,7 @@ fn execute_code(ctx: &Context, mut body: &str) {
             "--beta" => request.set_channel(Channel::Beta),
             "--nightly" => request.set_channel(Channel::Nightly),
             "--version" | "VERSION" => {
-                print_version(request.channel(), &ctx);
+                print_version(request.channel(), &*message);
                 return;
             },
             "--bare" | "--mini" => template = Template::Bare,
@@ -60,7 +79,7 @@ fn execute_code(ctx: &Context, mut body: &str) {
             "--2015" => request.set_edition(Some("2015".to_owned())),
             "--2018" => request.set_edition(Some("2018".to_owned())),
             "help" | "h" | "-h" | "-help" | "--help" | "--h" => {
-                super::help::display_help(ctx);
+                super::help::display_help(message);
                 return;
             },
             "--" => {
@@ -132,10 +151,10 @@ fn execute_code(ctx: &Context, mut body: &str) {
     };
 
     request.set_code(code);
-    execute(&ctx, &request);
+    execute(&*message, &request);
 }
 
-fn print_version<'a>(channel: Channel, ctx: &'a Context) {
+fn print_version<'a>(channel: Channel, message: &Message) {
     let http = Client::new();
     let resp = match playground::version(&http, channel) {
         Err(e) => return eprintln!("Failed to get version: {:?}", e),
@@ -148,10 +167,10 @@ fn print_version<'a>(channel: Channel, ctx: &'a Context) {
         date = resp.date,
     );
 
-    ctx.reply(version);
+    message.reply(&version);
 }
 
-pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) {
+pub fn execute(message: &Message, request: &ExecuteRequest) {
     let http = Client::new();
     let resp = match playground::execute(&http, &request) {
         Ok(resp) => resp,
@@ -176,11 +195,11 @@ pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) {
     let lines_count = lines.clone().count();
 
     for line in lines.take(take_count) {
-        ctx.reply(line);
+        message.reply(line);
     }
 
     if lines_count == 0 && resp.success {
-        ctx.reply("~~~ Code compiled successfully without output.");
+        message.reply("~~~ Code compiled successfully without output.");
     }
 
     if lines_count > take_count {
@@ -197,6 +216,6 @@ pub fn execute<'a>(ctx: &'a Context, request: &'a ExecuteRequest) {
             },
         };
 
-        ctx.reply(format!("~~~ Full output: {}", url));
+        message.reply(&format!("~~~ Full output: {}", url));
     }
 }

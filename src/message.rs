@@ -1,7 +1,7 @@
 use failure::Error;
 use std::sync::Arc;
 
-pub trait Message {
+pub trait Message: Send + Sync {
     /// The body of the message without address prefixes.
     /// E.g. `bot: hello` would be returned as `hello`.
     fn body(&self) -> &str;

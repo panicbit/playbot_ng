@@ -240,7 +240,7 @@ mod gist {
 
     lazy_static! {
         static ref GIST_URL_RE: Regex = Regex::new(
-            "^(https?://)?gist.github.com/[^/ ]+/(?P<id>[0-9a-f]+)/?$"
+            "^(https?://)?gist.github.com/([^/ ]+/)?(?P<id>[0-9a-f]+)/?$"
         ).unwrap();
 
         static ref RAW_GIST_URL_RE: Regex = Regex::new(

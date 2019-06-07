@@ -4,6 +4,7 @@ use reqwest::Client;
 use actix::prelude::*;
 use super::*;
 use crate::Message;
+use std::borrow::Cow;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
@@ -92,10 +93,22 @@ fn execute_code(message: &Message, mut body: &str) {
         body = &body[flag.len()..];
     }
 
-    body = body.trim_start();
+    let mut body = Cow::Borrowed(body.trim_start());
+
+    if gist::is_gist_or_raw_gist_url(&body) {
+        template = Template::Bare;
+        match gist::fetch_gist(&body) {
+            Ok(file) => body = Cow::Owned(file),
+            Err(e) => {
+                eprintln!("[ERR/gist/{}]: {}", body, e);
+                message.reply("Failed to fetch gist");
+                return;
+            }
+        }
+    }
 
     if template == Template::Bare {
-        if let Ok(syn::File { attrs, items, .. }) = syn::parse_str::<syn::File>(body) {
+        if let Ok(syn::File { attrs, items, .. }) = syn::parse_str::<syn::File>(&body) {
             let main_exists = items.iter().any(|item| match item {
                 syn::Item::Fn(fun) => fun.ident == "main",
                 _ => false,
@@ -125,7 +138,7 @@ fn execute_code(message: &Message, mut body: &str) {
     let code = match template {
         Template::Bare => body.to_string(),
         Template::Expr => {
-            let crate_attrs = CRATE_ATTRS.find(body)
+            let crate_attrs = CRATE_ATTRS.find(&body)
                 .map(|attr| attr.as_str())
                 .unwrap_or("");
 
@@ -137,7 +150,7 @@ fn execute_code(message: &Message, mut body: &str) {
             )
         },
         Template::ExprAllocStats => {
-            let crate_attrs = CRATE_ATTRS.find(body)
+            let crate_attrs = CRATE_ATTRS.find(&body)
                 .map(|attr| attr.as_str())
                 .unwrap_or("");
 
@@ -217,5 +230,58 @@ pub fn execute(message: &Message, request: &ExecuteRequest) {
         };
 
         message.reply(&format!("~~~ Full output: {}", url));
+    }
+}
+
+mod gist {
+    use regex::Regex;
+    use std::error::Error;
+    use std::collections::HashMap;
+
+    lazy_static! {
+        static ref GIST_URL_RE: Regex = Regex::new(
+            "^(https?://)?gist.github.com/[^/ ]+/(?P<id>[0-9a-f]+)/?$"
+        ).unwrap();
+
+        static ref RAW_GIST_URL_RE: Regex = Regex::new(
+            "^(https?://)?gist.githubusercontent.com/[^/ ]+/[0-9a-f]+/raw(/.*)?"
+        ).unwrap();
+    }
+
+    pub fn is_gist_or_raw_gist_url(url: &str) -> bool {
+        RAW_GIST_URL_RE.is_match(url) || GIST_URL_RE.is_match(url)
+    }
+
+    pub fn fetch_gist(url: &str) -> Result<String, Box<Error>> {
+        let url = url.trim();
+
+        if RAW_GIST_URL_RE.is_match(url) {
+            let mut file = reqwest::get(url)?;
+            let file = file.text()?;
+            return Ok(file);
+        }
+
+        let captures = GIST_URL_RE.captures(url)
+            .ok_or("Not a gist url")?;
+        let id = &captures["id"];
+        let url = format!("https://api.github.com/gists/{}", id);
+        let gist = reqwest::get(&url)?.json::<Gist>()?;
+        let file = gist.files.into_iter()
+            .map(|(_, file)| file)
+            .find(|file| file.filename.ends_with(".rs"))
+            .ok_or("No .rs file found in the gist")?;
+
+        Ok(file.content)
+    }
+
+    #[derive(Deserialize)]
+    struct Gist {
+        files: HashMap<String, File>,
+    }
+
+    #[derive(Deserialize)]
+    struct File {
+        filename: String,
+        content: String,
     }
 }

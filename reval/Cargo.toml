@@ -9,3 +9,4 @@ playbot_ng = { path = ".." }
 failure = "0.1.2"
 tokio = "0.1.11"
 rustyline = "2.1.0"
+shared_str = { git = "https://github.com/panicbit/shared_str" }

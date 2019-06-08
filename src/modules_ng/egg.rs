@@ -72,14 +72,14 @@ impl Handler<OnMessage> for Egg {
         let message = event.message;
 
         for dialog in &*SCRIPT {
-            if let Some(caps) = dialog.0.captures(message.body()) {
+            if let Some(caps) = dialog.0.captures(&message.body()) {
                 if let Some(nick) = caps.name("nick") {
                     if nick.as_str() != message.current_nickname().as_str() {
                         return;
                     }
                 }
 
-                let reply = (dialog.1)(message.source_nickname());
+                let reply = (dialog.1)(&message.source_nickname());
 
                 if !reply.is_empty() {
                     message.reply(&reply);

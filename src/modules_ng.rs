@@ -193,7 +193,7 @@ impl Handler<OnMessage> for PluginManager {
                 Regex::new(r"^\s*\?(?P<command>[^ ]+)\s*(?P<arg>.*)\s*$").unwrap();
         }
 
-        match COMMAND_RE.captures(event.message.body()) {
+        match COMMAND_RE.captures(&event.message.body()) {
             Some(captures) => {
                 let command = captures["command"].to_string();
                 let arg = captures["arg"].to_string();

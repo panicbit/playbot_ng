@@ -12,3 +12,4 @@ failure = "0.1.2"
 toml = "0.4.8"
 serde = "1.0.80"
 serde_derive = "1.0.80"
+shared_str = { git = "https://github.com/panicbit/shared_str" }

@@ -1178,6 +1178,7 @@ dependencies = [
  "playbot_ng 0.1.0",
  "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shared_str 0.1.0 (git+https://github.com/panicbit/shared_str)",
  "toml 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1195,6 +1196,7 @@ dependencies = [
  "reqwest 0.9.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shared_str 0.1.0 (git+https://github.com/panicbit/shared_str)",
  "syn 0.15.33 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1441,6 +1443,7 @@ dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "playbot_ng 0.1.0",
  "rustyline 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shared_str 0.1.0 (git+https://github.com/panicbit/shared_str)",
  "tokio 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1609,6 +1612,11 @@ dependencies = [
 name = "sha1"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "shared_str"
+version = "0.1.0"
+source = "git+https://github.com/panicbit/shared_str#744a378a909d5a174a9bbb80a073bda93293c397"
 
 [[package]]
 name = "siphasher"
@@ -2350,6 +2358,7 @@ dependencies = [
 "checksum serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)" = "5a23aa71d4a4d43fdbfaac00eff68ba8a06a51759a89ac3304323e800c4dd40d"
 "checksum serde_urlencoded 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)" = "642dd69105886af2efd227f75a520ec9b44a820d65bc133a9131f7d229fd165a"
 "checksum sha1 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
+"checksum shared_str 0.1.0 (git+https://github.com/panicbit/shared_str)" = "<none>"
 "checksum siphasher 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "0b8de496cf83d4ed58b6be86c3a275b8602f6ffe98d3024a869e124147a9a3ac"
 "checksum slab 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17b4fcaed89ab08ef143da37bc52adbcc04d4a69014f4c1208d6b51f0c47bc23"
 "checksum slab 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"

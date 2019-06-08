@@ -32,7 +32,7 @@ impl Handler<OnMessage> for Playground {
             return;
         }
 
-        execute_code(&*event.message, event.message.body());
+        execute_code(&*event.message, &event.message.body());
     }
 }
 

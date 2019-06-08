@@ -2,6 +2,7 @@
 
 use std::thread;
 use std::sync::Arc;
+use shared_str::ArcStr;
 use chrono::{
     prelude::*,
     Duration,
@@ -92,14 +93,14 @@ type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
 
 #[derive(Clone)]
 pub struct IrcMessage {
-    body: String,
+    body: ArcStr,
     is_directly_addressed: bool,
     reply_fn: SendFn,
     source: Prefix,
-    source_nickname: String,
-    target: String,
+    source_nickname: ArcStr,
+    target: ArcStr,
     client: IrcClient,
-    current_nickname: Arc<String>,
+    current_nickname: ArcStr,
 }
 
 impl IrcMessage {
@@ -155,20 +156,20 @@ impl IrcMessage {
 
         Some(Self {
             client,
-            body: body.to_owned(),
+            body: body.into(),
             reply_fn,
             source: source.to_owned(),
-            source_nickname: source_nickname.to_owned(),
-            target: target.to_owned(),
+            source_nickname: source_nickname.into(),
+            target: target.into(),
             is_directly_addressed,
-            current_nickname
+            current_nickname: current_nickname.to_string().into(),
         })
     }
 }
 
 impl Message for IrcMessage {
-    fn body(&self) -> &str {
-        &self.body
+    fn body(&self) -> ArcStr {
+        self.body.clone()
     }
 
     /// Wether the message was aimed directetly at the bot,
@@ -191,11 +192,11 @@ impl Message for IrcMessage {
         Ok(())
     }
 
-    fn source_nickname(&self) -> &str {
-        &self.source_nickname
+    fn source_nickname(&self) -> ArcStr {
+        self.source_nickname.clone()
     }
 
-    fn current_nickname(&self) -> Arc<String> {
+    fn current_nickname(&self) -> ArcStr {
         self.current_nickname.clone()
     }
 }

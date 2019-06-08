@@ -16,6 +16,10 @@ regex = "1.0.5"
 lazy_static = "1.1.0"
 playground = { path = "playground" }
 cratesio = { path = "cratesio" }
+actix = "0.8.2"
+serde = "1.0.92"
+serde_derive = "1.0.92"
+shared_str = { git = "https://github.com/panicbit/shared_str" }
 
 [dependencies.syn]
 version = "0.15.12"

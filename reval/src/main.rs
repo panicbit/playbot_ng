@@ -1,21 +1,23 @@
 use playbot::{Playbot, Message};
 use failure::Error;
-use std::sync::Arc;
+use shared_str::ArcStr;
 use rustyline::error::ReadlineError;
 
 struct CliMessage {
-    body: String,
+    body: ArcStr,
 }
 
 impl CliMessage {
-    fn new(body: String) -> Self {
-        Self { body }
+    fn new(body: impl AsRef<str>) -> Self {
+        Self {
+            body: body.as_ref().trim().into(),
+        }
     }
 }
 
 impl Message for CliMessage {
-    fn body(&self) -> &str {
-        self.body.trim()
+    fn body(&self) -> ArcStr {
+        self.body.clone()
     }
 
     fn is_directly_addressed(&self) -> bool {
@@ -27,12 +29,12 @@ impl Message for CliMessage {
         Ok(())
     }
 
-    fn source_nickname(&self) -> &str {
-        ""
+    fn source_nickname(&self) -> ArcStr {
+        "".into()
     }
 
-    fn current_nickname(&self) -> Arc<String> {
-        Arc::new(String::new())
+    fn current_nickname(&self) -> ArcStr {
+        "".into()
     }
 }
 

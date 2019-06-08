@@ -2,6 +2,7 @@
 
 use std::thread;
 use std::sync::Arc;
+use shared_str::ArcStr;
 use chrono::{
     prelude::*,
     Duration,
@@ -72,7 +73,7 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
         let playbot = playbot.clone();
         let client = client.clone();
 
-        let message = match IrcMessage::new(&client, &message) {
+        let message = match IrcMessage::new(client, message) {
             Some(message) => message,
             None => return Ok(()),
         };
@@ -91,19 +92,19 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
 type SendFn = fn(&IrcClient, &str, &str) -> irc::error::Result<()>;
 
 #[derive(Clone)]
-pub struct IrcMessage<'a> {
-    body: &'a str,
+pub struct IrcMessage {
+    body: ArcStr,
     is_directly_addressed: bool,
     reply_fn: SendFn,
-    source: &'a Prefix,
-    source_nickname: &'a str,
-    target: &'a str,
-    client: &'a IrcClient,
-    current_nickname: Arc<String>,
+    source: Prefix,
+    source_nickname: ArcStr,
+    target: ArcStr,
+    client: IrcClient,
+    current_nickname: ArcStr,
 }
 
-impl<'a> IrcMessage<'a> {
-    pub fn new(client: &'a IrcClient, message: &'a irc::proto::Message) -> Option<Self> {
+impl IrcMessage {
+    pub fn new(client: IrcClient, message: irc::proto::Message) -> Option<Self> {
         let mut body = match message.command {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,
@@ -155,20 +156,20 @@ impl<'a> IrcMessage<'a> {
 
         Some(Self {
             client,
-            body,
+            body: body.into(),
             reply_fn,
-            source,
-            source_nickname,
-            target,
+            source: source.to_owned(),
+            source_nickname: source_nickname.into(),
+            target: target.into(),
             is_directly_addressed,
-            current_nickname
+            current_nickname: current_nickname.to_string().into(),
         })
     }
 }
 
-impl<'a> Message for IrcMessage<'a> {
-    fn body(&self) -> &str {
-        self.body
+impl Message for IrcMessage {
+    fn body(&self) -> ArcStr {
+        self.body.clone()
     }
 
     /// Wether the message was aimed directetly at the bot,
@@ -182,20 +183,20 @@ impl<'a> Message for IrcMessage<'a> {
         eprintln!("Replying: {:?}", message);
         for line in message.lines().flat_map(|line| line.split('\r')) {
             if line.len() > 400 {
-                (self.reply_fn)(self.client, self.target, "<<<message too long for irc>>>")?;
+                (self.reply_fn)(&self.client, &self.target, "<<<message too long for irc>>>")?;
                 continue;
             }
-            (self.reply_fn)(self.client, self.target, line)?;
+            (self.reply_fn)(&self.client, &self.target, line)?;
         }
 
         Ok(())
     }
 
-    fn source_nickname(&self) -> &str {
-        self.source_nickname
+    fn source_nickname(&self) -> ArcStr {
+        self.source_nickname.clone()
     }
 
-    fn current_nickname(&self) -> Arc<String> {
+    fn current_nickname(&self) -> ArcStr {
         self.current_nickname.clone()
     }
 }

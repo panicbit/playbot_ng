@@ -47,7 +47,15 @@ impl Playbot {
 
     pub fn handle_message<M: Message + 'static>(&self, message: M) {
         // self.commands.clone().handle_message(&message);
-        let message = Arc::new(message);
-        self.plugin_manager.do_send(OnMessage { message });
+        let message = Arc::new(message) as Arc<Message>;
+        let inline_messages = message.inline_messages(&message);
+
+        if inline_messages.len() == 0 {
+            self.plugin_manager.do_send(OnMessage { message });
+        } else {
+            for message in inline_messages {
+                self.plugin_manager.do_send(OnMessage { message });
+            }
+        }
     }
 }

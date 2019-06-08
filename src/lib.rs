@@ -5,7 +5,6 @@ use std::thread;
 use std::sync::Arc;
 use actix::prelude::*;
 
-mod context;
 mod message;
 pub use self::message::Message;
 

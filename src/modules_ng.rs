@@ -17,6 +17,9 @@ pub(crate) use self::crate_info::CrateInfo;
 mod egg;
 pub(crate) use self::egg::Egg;
 
+mod genword;
+pub(crate) use self::genword::GenWord;
+
 pub struct PluginContext<P>
 where P: Actor,
 {

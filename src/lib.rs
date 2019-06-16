@@ -29,6 +29,7 @@ impl Playbot {
                 pm.register_plugin("playground", |ctx| modules_ng::Playground::new(ctx));
                 pm.register_plugin("crate_info", |ctx| modules_ng::CrateInfo::new(ctx));
                 pm.register_plugin("egg", |ctx| modules_ng::Egg::new(ctx));
+                pm.register_plugin("genword", |ctx| modules_ng::GenWord::new(ctx));
 
                 pm
             });

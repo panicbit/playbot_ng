@@ -19,7 +19,7 @@ cratesio = { path = "cratesio" }
 actix = "0.8.2"
 serde = "1.0.92"
 serde_derive = "1.0.92"
-shared_str = { git = "https://github.com/panicbit/shared_str" }
+shared_str = "0.1.0"
 rand = "0.6.5"
 
 [dependencies.syn]

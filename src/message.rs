@@ -42,7 +42,7 @@ impl InlineMessage {
             .captures_iter(&body)
             .flat_map(|caps| caps.get(1))
             .map(|inline_body| Self {
-                body: body.sliced(inline_body.as_str()).unwrap(),
+                body: body.rejoin(inline_body.as_str()).unwrap(),
                 message: message.clone(),
             })
             .map(|m| Arc::new(m) as Arc<Message>)

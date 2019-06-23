@@ -53,7 +53,7 @@ lazy_static! {
                 continue
             }
 
-            if word.len() < 3 {
+            if word.len() < 3 || word.len() > 7 {
                 continue;
             }
 
@@ -65,7 +65,7 @@ lazy_static! {
 }
 
 fn gen_word() -> Result<String, String> {
-    let word = format!("{}{}", random_word()?, random_word()?);
+    let word = format!("{} {}", random_word()?, random_word()?);
     Ok(word)
 }
 

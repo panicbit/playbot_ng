@@ -193,7 +193,7 @@ impl Handler<OnMessage> for PluginManager {
     fn handle(&mut self, event: OnMessage, _ctx: &mut Context<Self>) {
         lazy_static! {
             static ref COMMAND_RE: Regex =
-                Regex::new(r"^\s*\?(?P<command>[^ ]+)\s*(?P<arg>.*)\s*$").unwrap();
+                Regex::new(r"^\s*\?(?P<command>\w+)\s*(?P<arg>.*)\s*$").unwrap();
         }
 
         match COMMAND_RE.captures(&event.message.body()) {

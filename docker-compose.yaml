@@ -1,0 +1,7 @@
+version: "3.7"
+services:
+  playbot_irc:
+    build: .
+    image: playbot_irc
+    volumes:
+      - "./config.toml:/config.toml"

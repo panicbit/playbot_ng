@@ -12,5 +12,4 @@ RUN cargo --color=always build -p playbot_irc
 
 FROM base as run
 COPY --from=build /app/target/debug/playbot_irc /bin/
-
-ENTRYPOINT [ "/bin/playbot_irc" ]
+CMD [ "/bin/playbot_irc" ]

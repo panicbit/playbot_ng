@@ -10,27 +10,24 @@ use chrono::{
 use irc::client::prelude::{*, Config as IrcConfig};
 use failure::Error;
 use playbot::{Playbot, Message};
+use std::panic::catch_unwind;
 
 mod config;
 use self::config::Config;
 
 pub fn main() {
-    loop {
-        let res = std::panic::catch_unwind(|| {
-            let config = Config::load("config.toml").expect("failed to load config.toml");
+    let config = Config::load("config.toml").expect("failed to load config.toml");
 
-            let threads: Vec<_> = config.instances.into_iter().map(|config| {
-                thread::spawn(move || run_instance(config))
-            }).collect();
-
-            for thread in threads {
-                thread.join().ok();
+    let threads: Vec<_> = config.instances.into_iter().map(|config| {
+        thread::spawn(move || loop {
+            if catch_unwind(|| run_instance(config.clone())).is_err() {
+                println!("PANICKED");
             }
-        });
+        })
+    }).collect();
 
-        if let Err(e) = res {
-            println!("PANIC: {:?}", e);
-        }
+    for thread in threads {
+        thread.join().ok();
     }
 }
 

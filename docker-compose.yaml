@@ -6,3 +6,4 @@ services:
     volumes:
       - "./config.toml:/config.toml"
     restart: always
+    tty: true

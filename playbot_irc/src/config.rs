@@ -3,6 +3,7 @@ use std::path::Path;
 use std::fs;
 use failure::Error;
 use toml;
+use slog::Logger;
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -11,7 +12,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(path: impl AsRef<Path>) -> Result<Self, Error> {
+    pub fn load(path: impl AsRef<Path>, l: &Logger) -> Result<Self, Error> {
+        info!(l, "Loading config"; "path" => path.as_ref().display());
         let config = fs::read_to_string(path)?;
         let config = toml::de::from_str::<Self>(&config)?;
         Ok(config)

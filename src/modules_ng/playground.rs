@@ -5,6 +5,7 @@ use actix::prelude::*;
 use super::*;
 use crate::Message;
 use std::borrow::Cow;
+use slog::Logger;
 
 lazy_static! {
     static ref CRATE_ATTRS: Regex = Regex::new(r"^(\s*#!\[.*?\])*").unwrap();
@@ -32,7 +33,7 @@ impl Handler<OnMessage> for Playground {
             return;
         }
 
-        execute_code(&*event.message, &event.message.body());
+        execute_code(&*event.message, &event.message.body(), &event.l);
     }
 }
 
@@ -44,7 +45,7 @@ impl Handler<OnCommand> for Playground {
             return;
         }
 
-        execute_code(&*event.message, &event.arg);
+        execute_code(&*event.message, &event.arg, &event.l);
     }
 }
 
@@ -56,7 +57,7 @@ enum Template {
     ExprAllocStats,
 }
 
-fn execute_code(message: &Message, mut body: &str) {
+fn execute_code(message: &Message, mut body: &str, l: &Logger) {
     let mut request = ExecuteRequest::new("");
     let mut template = Template::Expr;
 
@@ -100,7 +101,7 @@ fn execute_code(message: &Message, mut body: &str) {
         match gist::fetch_gist(&body) {
             Ok(file) => body = Cow::Owned(file),
             Err(e) => {
-                eprintln!("[ERR/gist/{}]: {}", body, e);
+                error!(l, "[ERR/gist/{}]: {}", body, e);
                 message.reply("Failed to fetch gist");
                 return;
             }

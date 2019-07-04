@@ -1,9 +1,11 @@
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate slog;
 
 use std::thread;
 use std::sync::Arc;
 use actix::prelude::*;
+use slog::Logger;
 
 mod message;
 pub use self::message::Message;
@@ -46,16 +48,26 @@ impl Playbot {
         }
     }
 
-    pub fn handle_message<M: Message + 'static>(&self, message: M) {
+    pub fn handle_message<M: Message + 'static>(&self, message: M, l: &Logger) {
+        let l = l.new(o!{
+            "body" => message.body().to_string(),
+            "sender" => message.source_nickname().to_string(),
+            "directly_addressed" => message.is_directly_addressed(),
+        });
+
+        info!(l, "Handling message");
+
         // self.commands.clone().handle_message(&message);
         let message = Arc::new(message) as Arc<Message>;
         let inline_messages = message.inline_messages(&message);
 
         if inline_messages.len() == 0 {
-            self.plugin_manager.do_send(OnMessage { message });
+            self.plugin_manager.do_send(OnMessage { message, l });
         } else {
             for message in inline_messages {
-                self.plugin_manager.do_send(OnMessage { message });
+                let l = l.new(o!{ "inline_body" => message.body().to_string() });
+                info!(l, "Handling inline message");
+                self.plugin_manager.do_send(OnMessage { message, l });
             }
         }
     }

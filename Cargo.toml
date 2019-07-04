@@ -21,6 +21,7 @@ serde = "1.0.92"
 serde_derive = "1.0.92"
 shared_str = "0.1.0"
 rand = "0.6.5"
+slog = "2.4.1"
 
 [dependencies.syn]
 version = "0.15.12"

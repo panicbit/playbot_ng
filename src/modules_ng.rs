@@ -201,11 +201,16 @@ impl Handler<OnMessage> for PluginManager {
                 let command = captures["command"].to_string();
                 let arg = captures["arg"].to_string();
 
-                eprintln!("COMMAND: {:?}, ARG: {:?}", command, arg);
+                let l = event.l.new(o!{
+                    "command" => command.clone(),
+                    "command_arg" => arg.clone(),
+                });
+                info!(l, "Handling command");
 
                 let handler = match self.on_command_handlers.get(&command) {
                     Some(handler) => handler,
                     None => {
+                        error!(l, "Command does not exist");
                         event.message.reply(&format!("Command {:?} does not exist", command));
                         return
                     }
@@ -215,6 +220,7 @@ impl Handler<OnMessage> for PluginManager {
                     message: event.message,
                     command,
                     arg,
+                    l,
                 });
 
             },
@@ -255,6 +261,7 @@ pub mod event {
     use actix::prelude::*;
     use super::{Message, PluginId, PluginContext};
     use std::sync::Arc;
+    use slog::Logger;
 
     #[derive(Message)]
     pub struct RegisterPlugin<N, F, A>
@@ -271,6 +278,7 @@ pub mod event {
     #[derive(Message, Clone)]
     pub struct OnMessage {
         pub message: Arc<Message>,
+        pub l: Logger,
     }
 
     #[derive(Message, Clone)]
@@ -278,6 +286,7 @@ pub mod event {
         pub message: Arc<Message>,
         pub command: String,
         pub arg: String,
+        pub l: Logger,
     }
 
     #[derive(Message)]

@@ -1,7 +1,9 @@
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate slog;
+#[macro_use] extern crate git_version;
 
 use std::thread;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use shared_str::ArcStr;
 use chrono::{
     prelude::*,
@@ -11,16 +13,31 @@ use irc::client::prelude::{*, Config as IrcConfig};
 use failure::Error;
 use playbot::{Playbot, Message};
 use std::panic::catch_unwind;
+use slog::{Logger, Drain};
 
 mod config;
 use self::config::Config;
 
-pub fn main() {
-    let config = Config::load("config.toml").expect("failed to load config.toml");
+fn logger() -> Logger {
+    let decorator = slog_term::TermDecorator::new().build();
+    let drain = slog_term::CompactFormat::new(decorator).build();
+    let drain = Mutex::new(drain).fuse();
+    Logger::root(drain, o!{
+        "version" => git_describe!("--always", "--tags", "--dirty"),
+    })
+}
+
+fn main() {
+    let l = logger();
+
+    info!(l, "Starting main");
+
+    let config = Config::load("config.toml", &l).expect("failed to load config.toml");
 
     let threads: Vec<_> = config.instances.into_iter().map(|config| {
+        let l = l.clone();
         thread::spawn(move || loop {
-            if catch_unwind(|| run_instance(config.clone())).is_err() {
+            if catch_unwind(|| run_instance(config.clone(), &l)).is_err() {
                 println!("PANICKED");
             }
         })
@@ -31,14 +48,17 @@ pub fn main() {
     }
 }
 
-pub fn run_instance(config: IrcConfig) {
+pub fn run_instance(config: IrcConfig, l: &Logger) {
+    let l = l.new(o!{"server" => config.server.clone()});
+    info!(l, "Starting instance");
+
     let sleep_dur = Duration::seconds(5).to_std().unwrap();
     let server = config.server.as_ref().map(|x| &**x).unwrap_or("");
 
     loop {   
         println!("{} Starting up", Utc::now());
 
-        match connect_and_handle(config.clone()) {
+        match connect_and_handle(config.clone(), &l) {
             Ok(()) => eprintln!("{}/[OK] Disconnected for an unknown reason", server),
             Err(e) => {
                 eprintln!("[{}/ERR] Disconnected", server);
@@ -57,7 +77,8 @@ pub fn run_instance(config: IrcConfig) {
     }
 }
 
-pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
+pub fn connect_and_handle(config: IrcConfig, l: &Logger) -> Result<(), Error> {
+    let l = l.clone();
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
     let mut reactor = IrcReactor::new()?;
     let client = reactor.prepare_client_and_connect(config)?;
@@ -75,7 +96,7 @@ pub fn connect_and_handle(config: IrcConfig) -> Result<(), Error> {
             None => return Ok(()),
         };
 
-        playbot.handle_message(message);
+        playbot.handle_message(message, &l);
 
         Ok(())
     });

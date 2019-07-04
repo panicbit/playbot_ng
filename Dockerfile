@@ -4,6 +4,7 @@ RUN apk add libgcc
 
 FROM base AS build
 RUN apk add cargo
+RUN apk add git
 RUN apk add openssl-dev
 WORKDIR /app
 COPY . .

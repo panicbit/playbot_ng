@@ -2,6 +2,7 @@ use playbot::{Playbot, Message};
 use failure::Error;
 use shared_str::ArcStr;
 use rustyline::error::ReadlineError;
+use slog::{Logger, Discard, o};
 
 struct CliMessage {
     body: ArcStr,
@@ -39,6 +40,7 @@ impl Message for CliMessage {
 }
 
 fn main() {
+    let logger = Logger::root(Discard, o!());
     let playbot = Playbot::new();
     let mut rl = rustyline::Editor::<()>::new();
 
@@ -56,6 +58,6 @@ fn main() {
         rl.add_history_entry(input.as_str());
 
         let message = CliMessage::new(input);
-        playbot.handle_message(message);
+        playbot.handle_message(message, &logger);
     }
 }

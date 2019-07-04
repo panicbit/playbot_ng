@@ -5,3 +5,4 @@ services:
     image: playbot_irc
     volumes:
       - "./config.toml:/config.toml"
+    restart: always

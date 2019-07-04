@@ -1,10 +1,10 @@
 FROM alpine:edge AS base
-RUN apk add --no-cache openssl
-RUN apk add --no-cache libgcc
+RUN apk add openssl
+RUN apk add libgcc
 
 FROM base AS build
-RUN apk add --no-cache cargo
-RUN apk add --no-cache openssl-dev
+RUN apk add cargo
+RUN apk add openssl-dev
 WORKDIR /app
 COPY . .
 RUN cargo --color=always fetch

@@ -2,7 +2,6 @@
 #[macro_use] extern crate slog;
 #[macro_use] extern crate git_version;
 
-use std::thread;
 use std::sync::{Arc, Mutex};
 use shared_str::ArcStr;
 use chrono::{
@@ -10,10 +9,12 @@ use chrono::{
     Duration,
 };
 use irc::client::prelude::{*, Config as IrcConfig};
+use irc::client::Client as IrcClient;
 use failure::Error;
+use futures::prelude::*;
 use playbot::{Playbot, Message};
-use std::panic::catch_unwind;
 use slog::{Logger, Drain};
+use tokio::time;
 
 mod config;
 use self::config::Config;
@@ -27,28 +28,41 @@ fn logger() -> Logger {
     })
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let l = logger();
 
     info!(l, "Starting main");
 
-    let config = Config::load("config.toml", &l).expect("failed to load config.toml");
+    let config = Config::load("config.toml", &l).await
+        .expect("failed to load config.toml");
 
     let threads: Vec<_> = config.instances.into_iter().map(|config| {
         let l = l.clone();
-        thread::spawn(move || loop {
-            if catch_unwind(|| run_instance(config.clone(), &l)).is_err() {
-                println!("PANICKED");
+        let config = config.clone();
+
+        tokio::spawn(async move {
+            loop {
+                let res = tokio::spawn(run_instance(config.clone(), l.clone()))
+                    .await;
+
+                if let Err(err) = res {
+                    println!(
+                        "[{server}] Instance terminated: {error}",
+                        server = config.server.as_deref().unwrap_or(""),
+                        error = err
+                    );
+                }
             }
         })
     }).collect();
 
     for thread in threads {
-        thread.join().ok();
+        thread.await.ok();
     }
 }
 
-pub fn run_instance(config: IrcConfig, l: &Logger) {
+pub async fn run_instance(config: IrcConfig, l: Logger) {
     let l = l.new(o!{"server" => config.server.clone()});
     info!(l, "Starting instance");
 
@@ -58,7 +72,7 @@ pub fn run_instance(config: IrcConfig, l: &Logger) {
     loop {   
         println!("{} Starting up", Utc::now());
 
-        match connect_and_handle(config.clone(), &l) {
+        match connect_and_handle(config.clone(), &l).await {
             Ok(()) => eprintln!("{}/[OK] Disconnected for an unknown reason", server),
             Err(e) => {
                 eprintln!("[{}/ERR] Disconnected", server);
@@ -71,38 +85,40 @@ pub fn run_instance(config: IrcConfig, l: &Logger) {
 
         eprintln!("Reconnecting in 5 seconds");
 
-        thread::sleep(sleep_dur);
+        time::delay_for(sleep_dur).await;
 
         println!("{} Terminated", Utc::now());
     }
 }
 
-pub fn connect_and_handle(config: IrcConfig, l: &Logger) -> Result<(), Error> {
+pub async fn connect_and_handle(config: IrcConfig, l: &Logger) -> Result<(), Error> {
     let l = l.clone();
     //    let mut codedb = ::codedb::CodeDB::open_or_create("code_db.json")?;
-    let mut reactor = IrcReactor::new()?;
-    let client = reactor.prepare_client_and_connect(config)?;
-    let playbot = Arc::new(Playbot::new());
-
+    let mut client = Client::from_config(config).await?;
     client.identify()?;
 
-    reactor
-    .register_client_with_handler(client, move |client, message| {
+    let mut messages = client.stream()?;
+
+    let client = Arc::new(client);
+    let playbot = Arc::new(Playbot::new());
+
+    while let Some(message) = messages.next().await.transpose()? {
+        println!("In the message loop!");
+
+        println!("{:?}", message);
+
         let playbot = playbot.clone();
         let client = client.clone();
 
         let message = match IrcMessage::new(client, message) {
             Some(message) => message,
-            None => return Ok(()),
+            None => continue,
         };
 
-        playbot.handle_message(message, &l);
+        playbot.handle_message(message, &l).await;
+    }
 
-        Ok(())
-    });
-
-    // reactor blocks until a disconnection or other in `irc` error
-    reactor.run()?;
+    eprintln!("Message stream ended");
 
     Ok(())
 }
@@ -117,12 +133,12 @@ pub struct IrcMessage {
     source: Prefix,
     source_nickname: ArcStr,
     target: ArcStr,
-    client: IrcClient,
+    client: Arc<IrcClient>,
     current_nickname: ArcStr,
 }
 
 impl IrcMessage {
-    pub fn new(client: IrcClient, message: irc::proto::Message) -> Option<Self> {
+    pub fn new(client: Arc<IrcClient>, message: irc::proto::Message) -> Option<Self> {
         let mut body = match message.command {
             Command::PRIVMSG(_, ref body) => body.trim(),
             _ => return None,

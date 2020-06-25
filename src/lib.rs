@@ -48,7 +48,7 @@ impl Playbot {
         }
     }
 
-    pub fn handle_message<M: Message + 'static>(&self, message: M, l: &Logger) {
+    pub async fn handle_message<M: Message + 'static>(&self, message: M, l: &Logger) {
         let l = l.new(o!{
             "body" => message.body().to_string(),
             "sender" => message.source_nickname().to_string(),
@@ -58,7 +58,7 @@ impl Playbot {
         info!(l, "Handling message");
 
         // self.commands.clone().handle_message(&message);
-        let message = Arc::new(message) as Arc<Message>;
+        let message = Arc::new(message) as Arc<dyn Message>;
         let inline_messages = message.inline_messages(&message);
 
         if inline_messages.len() == 0 {

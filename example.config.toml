@@ -6,7 +6,7 @@ channels = [
     "#my_channel"
 ]
 port = 6697
-use_ssl = true
+use_tls = true
 should_ghost = true
 ghost_sequence = ["RECOVER"]
 burst_window_length = 5

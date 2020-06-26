@@ -39,7 +39,8 @@ impl Message for CliMessage {
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let logger = Logger::root(Discard, o!());
     let playbot = Playbot::new();
     let mut rl = rustyline::Editor::<()>::new();
@@ -58,6 +59,6 @@ fn main() {
         rl.add_history_entry(input.as_str());
 
         let message = CliMessage::new(input);
-        playbot.handle_message(message, &logger);
+        playbot.handle_message(message, &logger).await;
     }
 }

@@ -1,11 +1,11 @@
 use actix::prelude::*;
+use futures::prelude::*;
 use crate::Message;
 use super::{PluginContext, OnCommand};
 use cratesio;
-use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use itertools::Itertools;
 use reqwest::StatusCode;
-
 
 pub struct CrateInfo {}
 
@@ -21,21 +21,24 @@ impl Actor for CrateInfo {
 }
 
 impl Handler<OnCommand> for CrateInfo {
-    type Result = ();
+    type Result = ResponseFuture<()>;
 
-    fn handle(&mut self, event: OnCommand, ctx: &mut Context<Self>) {
-        if event.command != "crate" {
-            return;
-        }
+    fn handle(&mut self, event: OnCommand, _ctx: &mut Context<Self>) -> Self::Result {
+        async move {
+            if event.command != "crate" {
+                return;
+            }
 
-        for crate_name in event.arg.split_whitespace().take(3) {
-            show_crate_info(&*event.message, crate_name);
+            for crate_name in event.arg.split_whitespace().take(3) {
+                show_crate_info(&*event.message, crate_name).await;
+            }
         }
+        .boxed()
     }
 }
 
-fn show_crate_info(ctx: &Message, crate_name: &str) {
-    let info = match cratesio::crate_info(crate_name) {
+async fn show_crate_info(ctx: &dyn Message, crate_name: &str) {
+    let info = match cratesio::crate_info(crate_name).await {
         Ok(info) => info,
         // TODO: Use proper error types
         Err(ref err) if err.status() == Some(StatusCode::NOT_FOUND) => {
@@ -55,7 +58,7 @@ fn show_crate_info(ctx: &Message, crate_name: &str) {
         name = krate.name(),
         version = krate.max_version(),
         description = krate.description().split_whitespace().join(" "),
-        urlname = utf8_percent_encode(&krate.name(), PATH_SEGMENT_ENCODE_SET).collect::<String>()
+        urlname = utf8_percent_encode(&krate.name(), NON_ALPHANUMERIC).collect::<String>()
     );
 
     ctx.reply(&output);

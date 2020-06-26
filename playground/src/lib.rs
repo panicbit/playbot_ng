@@ -3,16 +3,15 @@
 pub mod execute;
 pub use self::execute::{
     execute,
-    async_execute,
     Request as ExecuteRequest,
     Response as ExecuteResponse,
 };
 
 mod version;
-pub use self::version::{Version, version, async_version};
+pub use self::version::{Version, version};
 
 pub mod paste;
-pub use self::paste::{paste, async_paste};
+pub use self::paste::paste;
 
 #[derive(Serialize,Debug,Copy,Clone)]
 #[serde(rename_all = "lowercase")]

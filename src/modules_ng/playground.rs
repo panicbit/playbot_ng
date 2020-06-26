@@ -2,6 +2,7 @@ use ::playground::{self, ExecuteRequest, Channel, Mode, CrateType};
 use regex::Regex;
 use reqwest::Client;
 use actix::prelude::*;
+use futures::prelude::*;
 use super::*;
 use crate::Message;
 use std::borrow::Cow;
@@ -26,26 +27,32 @@ impl Actor for Playground {
 }
 
 impl Handler<OnMessage> for Playground {
-    type Result = ();
+    type Result = ResponseFuture<()>;
 
-    fn handle(&mut self, event: OnMessage, ctx: &mut Context<Self>) {
-        if !event.message.is_directly_addressed() {
-            return;
+    fn handle(&mut self, event: OnMessage, _ctx: &mut Context<Self>) -> Self::Result {
+        async move {
+            if !event.message.is_directly_addressed() {
+                return;
+            }
+
+            execute_code(&*event.message, &event.message.body(), &event.l).await;
         }
-
-        execute_code(&*event.message, &event.message.body(), &event.l);
+        .boxed()
     }
 }
 
 impl Handler<OnCommand> for Playground {
-    type Result = ();
+    type Result = ResponseFuture<()>;
 
-    fn handle(&mut self, event: OnCommand, ctx: &mut Context<Self>) {
-        if event.command != "eval" {
-            return;
+    fn handle(&mut self, event: OnCommand, _ctx: &mut Context<Self>) -> Self::Result {
+        async move {
+            if event.command != "eval" {
+                return;
+            }
+
+            execute_code(&*event.message, &event.arg, &event.l).await;
         }
-
-        execute_code(&*event.message, &event.arg, &event.l);
+        .boxed()
     }
 }
 
@@ -57,7 +64,7 @@ enum Template {
     ExprAllocStats,
 }
 
-fn execute_code(message: &Message, mut body: &str, l: &Logger) {
+async fn execute_code(message: &dyn Message, mut body: &str, l: &Logger) {
     let mut request = ExecuteRequest::new("");
     let mut template = Template::Expr;
 
@@ -71,7 +78,7 @@ fn execute_code(message: &Message, mut body: &str, l: &Logger) {
             "--beta" => request.set_channel(Channel::Beta),
             "--nightly" => request.set_channel(Channel::Nightly),
             "--version" | "VERSION" => {
-                print_version(request.channel(), &*message);
+                print_version(request.channel(), &*message).await;
                 return;
             },
             "--bare" | "--mini" => template = Template::Bare,
@@ -98,7 +105,7 @@ fn execute_code(message: &Message, mut body: &str, l: &Logger) {
 
     if gist::is_gist_or_raw_gist_url(&body) {
         template = Template::Bare;
-        match gist::fetch_gist(&body) {
+        match gist::fetch_gist(&body).await {
             Ok(file) => body = Cow::Owned(file),
             Err(e) => {
                 error!(l, "[ERR/gist/{}]: {}", body, e);
@@ -165,12 +172,12 @@ fn execute_code(message: &Message, mut body: &str, l: &Logger) {
     };
 
     request.set_code(code);
-    execute(&*message, &request);
+    execute(&*message, &request).await;
 }
 
-fn print_version<'a>(channel: Channel, message: &Message) {
+async fn print_version<'a>(channel: Channel, message: &dyn Message) {
     let http = Client::new();
-    let resp = match playground::version(&http, channel) {
+    let resp = match playground::version(&http, channel).await {
         Err(e) => return eprintln!("Failed to get version: {:?}", e),
         Ok(resp) => resp,
     };
@@ -184,9 +191,9 @@ fn print_version<'a>(channel: Channel, message: &Message) {
     message.reply(&version);
 }
 
-pub fn execute(message: &Message, request: &ExecuteRequest) {
+pub async fn execute(message: &dyn Message, request: &ExecuteRequest<'_>) {
     let http = Client::new();
-    let resp = match playground::execute(&http, &request) {
+    let resp = match playground::execute(&http, &request).await {
         Ok(resp) => resp,
         Err(e) => return {
             eprintln!("Failed to execute code: {:?}", e);
@@ -223,7 +230,7 @@ pub fn execute(message: &Message, request: &ExecuteRequest) {
             stderr = resp.stderr,
         );
 
-        let url = match playground::paste(&http, code, request.channel(), request.mode()) {
+        let url = match playground::paste(&http, code, request.channel(), request.mode()).await {
             Ok(url) => url,
             Err(e) => return {
                 eprintln!("Failed to paste code: {:?}", e);
@@ -253,12 +260,12 @@ mod gist {
         RAW_GIST_URL_RE.is_match(url) || GIST_URL_RE.is_match(url)
     }
 
-    pub fn fetch_gist(url: &str) -> Result<String, Box<Error>> {
+    pub async fn fetch_gist(url: &str) -> Result<String, Box<dyn Error>> {
         let url = url.trim();
 
         if RAW_GIST_URL_RE.is_match(url) {
-            let mut file = reqwest::get(url)?;
-            let file = file.text()?;
+            let file = reqwest::get(url).await?.error_for_status()?;
+            let file = file.text().await?;
             return Ok(file);
         }
 
@@ -266,7 +273,7 @@ mod gist {
             .ok_or("Not a gist url")?;
         let id = &captures["id"];
         let url = format!("https://api.github.com/gists/{}", id);
-        let gist = reqwest::get(&url)?.json::<Gist>()?;
+        let gist = reqwest::get(&url).await?.error_for_status()?.json::<Gist>().await?;
         let file = gist.files.into_iter()
             .map(|(_, file)| file)
             .find(|file| file.filename.ends_with(".rs"))

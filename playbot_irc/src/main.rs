@@ -103,8 +103,6 @@ pub async fn connect_and_handle(config: IrcConfig, l: &Logger) -> Result<(), Err
     let playbot = Arc::new(Playbot::new());
 
     while let Some(message) = messages.next().await.transpose()? {
-        println!("In the message loop!");
-
         println!("{:?}", message);
 
         let playbot = playbot.clone();
@@ -117,8 +115,6 @@ pub async fn connect_and_handle(config: IrcConfig, l: &Logger) -> Result<(), Err
 
         playbot.handle_message(message, &l).await;
     }
-
-    eprintln!("Message stream ended");
 
     Ok(())
 }

@@ -1,30 +1,18 @@
 use crate::{Channel, CrateType, Mode};
 use std::borrow::Cow;
 use reqwest::{Client, Error};
-use reqwest::r#async as async_reqwest;
-use futures::prelude::*;
 
-pub fn execute(client: &Client, req: &Request) -> Result<Response, Error> {
+pub async fn execute(client: &Client, req: &Request<'_>) -> Result<Response, Error> {
     let resp = client
         .post("https://play.rust-lang.org/execute")
         .json(req)
-        .send()?
+        .send()
+        .await?
         .error_for_status()?
-        .json()?;
-    
+        .json()
+        .await?;
+
     Ok(resp)
-}
-
-pub fn async_execute(req: &Request) -> impl Future<Item = Response, Error = Error> {
-    let url = "https://play.rust-lang.org/execute";
-    let client = async_reqwest::Client::new();
-
-    client
-    .post(url)
-    .json(req)
-    .send()
-    .and_then(|resp| resp.error_for_status())
-    .and_then(|mut resp| resp.json())
 }
 
 #[derive(Serialize,Debug)]

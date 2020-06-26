@@ -2,32 +2,25 @@ extern crate reqwest;
 extern crate url;
 #[macro_use] extern crate serde_derive;
 
-use reqwest::r#async as async_reqwest;
-use futures::prelude::*;
-use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 
-pub fn crate_info(name: &str) -> Result<Info, reqwest::Error> {
+pub async fn crate_info(name: &str) -> Result<Info, reqwest::Error> {
+    let client = reqwest::Client::new();
     let url = format!(
         "https://crates.io/api/v1/crates/{}",
-        utf8_percent_encode(name, PATH_SEGMENT_ENCODE_SET).collect::<String>()
+        utf8_percent_encode(name, NON_ALPHANUMERIC).collect::<String>()
     );
-    let info = reqwest::get(&url)?
-        .json()?;
+
+    let response = client
+        .get(&url)
+        .send()
+        .await?;
+
+    let info = response
+        .json()
+        .await?;
 
     Ok(info)
-}
-
-pub fn async_crate_info(name: &str) -> impl Future<Item = Info, Error = reqwest::Error> {
-    let client = async_reqwest::Client::new();
-    let url = format!(
-        "https://crates.io/api/v1/crates/{}",
-        utf8_percent_encode(name, PATH_SEGMENT_ENCODE_SET).collect::<String>()
-    );
-
-    client
-    .get(&url)
-    .send()
-    .and_then(|mut resp| resp.json())
 }
 
 #[derive(Deserialize,Debug,Clone,PartialEq,Eq)]

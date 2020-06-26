@@ -33,7 +33,7 @@ mod __stat_alloc {{
         pub bytes_allocd: AtomicUsize,
         pub bytes_deallocd: AtomicUsize,
     }}
-    
+
     impl StatAlloc {{
         pub fn print_stats(&self) {{
             let num_allocs = self.num_allocs.load(SeqCst);
@@ -47,14 +47,14 @@ mod __stat_alloc {{
                 bytes_allocd as isize - bytes_deallocd as isize,
             );
         }}
-        
+
         pub fn reset(&self) {{
             self.num_allocs.store(0, SeqCst);
             self.num_deallocs.store(0, SeqCst);
             self.bytes_allocd.store(0, SeqCst);
             self.bytes_deallocd.store(0, SeqCst);
         }}
-        
+
         fn count_alloc(&self, size: usize) {{
             self.num_allocs.fetch_add(1, SeqCst);
             self.bytes_allocd.fetch_add(size, SeqCst);
@@ -65,23 +65,23 @@ mod __stat_alloc {{
             self.bytes_deallocd.fetch_add(size, SeqCst);
         }}
     }}
-    
+
     unsafe impl GlobalAlloc for StatAlloc {{
         unsafe fn alloc(&self, layout: Layout) -> *mut u8 {{
             self.count_alloc(layout.size());
             self.allocator.alloc(layout)
         }}
-    
+
         unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {{
             self.count_dealloc(layout.size());
             self.allocator.dealloc(ptr, layout)
         }}
-    
+
         unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {{
             self.count_alloc(layout.size());
             self.allocator.alloc_zeroed(layout)
         }}
-    
+
         unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {{
             self.count_dealloc(layout.size());
             self.count_alloc(new_size);

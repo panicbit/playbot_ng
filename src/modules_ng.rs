@@ -264,6 +264,7 @@ pub mod event {
     use slog::Logger;
 
     #[derive(Message)]
+    #[rtype(result = "()")]
     pub struct RegisterPlugin<N, F, A>
     where
         N: Into<String>,
@@ -276,30 +277,35 @@ pub mod event {
     }
 
     #[derive(Message, Clone)]
+    #[rtype(result = "()")]
     pub struct OnMessage {
-        pub message: Arc<Message>,
+        pub message: Arc<dyn Message>,
         pub l: Logger,
     }
 
     #[derive(Message, Clone)]
+    #[rtype(result = "()")]
     pub struct OnCommand {
-        pub message: Arc<Message>,
+        pub message: Arc<dyn Message>,
         pub command: String,
         pub arg: String,
         pub l: Logger,
     }
 
     #[derive(Message)]
+    #[rtype(result = "()")]
     pub enum UnloadPlugin {
         ById(PluginId),
     }
 
     #[derive(Message)]
+    #[rtype(result = "()")]
     pub struct RegisterOnMessageHandler {
         pub handler: super::OnMessageHandler,
     }
 
     #[derive(Message)]
+    #[rtype(result = "()")]
     pub struct RegisterOnCommandHandler {
         pub handler: super::OnCommandHandler,
         pub command: String,

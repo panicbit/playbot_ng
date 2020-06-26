@@ -118,7 +118,7 @@ async fn execute_code(message: &dyn Message, mut body: &str, l: &Logger) {
     if template == Template::Bare {
         if let Ok(syn::File { attrs, items, .. }) = syn::parse_str::<syn::File>(&body) {
             let main_exists = items.iter().any(|item| match item {
-                syn::Item::Fn(fun) => fun.ident == "main",
+                syn::Item::Fn(fun) => fun.sig.ident == "main",
                 _ => false,
             });
 
@@ -128,8 +128,15 @@ async fn execute_code(message: &dyn Message, mut body: &str, l: &Logger) {
 
             for attr in attrs {
                 match attr.parse_meta().unwrap() {
-                    syn::Meta::NameValue(syn::MetaNameValue { ident, lit: syn::Lit::Str(lit_str), .. }) => {
-                        if ident != "crate_type" { continue; }
+                    syn::Meta::NameValue(syn::MetaNameValue { path, lit: syn::Lit::Str(lit_str), .. }) => {
+                        let ident = match path.get_ident() {
+                            Some(ident) => ident,
+                            None => continue,
+                        };
+
+                        if ident != "crate_type" {
+                            continue;
+                        }
 
                         match lit_str.value().as_str() {
                             "bin" => request.set_crate_type(CrateType::Bin),

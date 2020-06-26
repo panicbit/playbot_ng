@@ -26,7 +26,7 @@ percent-encoding = "2.1"
 futures = "0.3"
 
 [dependencies.syn]
-version = "0.15.12"
+version = "1.0"
 features = ["full", "parsing"]
 default-features = false
 

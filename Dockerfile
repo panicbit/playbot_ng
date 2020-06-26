@@ -1,16 +1,13 @@
-FROM alpine:edge AS base
-RUN apk add openssl
-RUN apk add libgcc
-
-FROM base AS build
-RUN apk add cargo
-RUN apk add git
-RUN apk add openssl-dev
-WORKDIR /app
+FROM rust:alpine AS builder
+RUN apk add --no-cache musl-dev git
+WORKDIR /code
 COPY . .
 RUN cargo --color=always fetch
-RUN cargo --color=always build -p playbot_irc
+RUN cargo --color=always build --release -p playbot_irc
 
-FROM base as run
-COPY --from=build /app/target/debug/playbot_irc /bin/
-CMD [ "/bin/playbot_irc" ]
+FROM rust:alpine as runner
+RUN apk add --no-cache tini
+WORKDIR /app
+COPY --from=builder /code/target/release/playbot_irc .
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["/app/playbot_irc"]
